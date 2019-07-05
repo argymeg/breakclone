@@ -1,0 +1,12 @@
+Package: breaklone
+Type: Package
+Title: Estimating clonal relatedness probability between tumour pairs
+Version: 0.0.0.0.1
+Author: argymeg
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: WTFPL
+Encoding: UTF-8
+LazyData: true
+Imports: data.table
