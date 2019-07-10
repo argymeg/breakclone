@@ -17,13 +17,21 @@ getScore <- function(pair, segmentTable){
   #
 
   merged_lists <- mapply(function(x, y){list(merge(x, y, by = c("Chr", "Start"), all = TRUE))}, sample1_lists, sample2_lists)
-  binary_lists <- lapply(merged_lists, function(x){apply(x, 1, function(y){!any(is.na(y))})})
+  binary_flags <- lapply(merged_lists, function(x){apply(x, 1, function(y){!any(is.na(y))})})
 
-  concordant_list <- lapply(binary_lists, sum)
-  discordant_list <- lapply(binary_lists, function(x){length(x) - sum(x)})
+  concordant_actual_list <- mapply(function(x,y){list(x[y,])}, merged_lists, binary_flags)
+  discordant_actual_list <- mapply(function(x,y){list(x[!y,])}, merged_lists, binary_flags)
 
-  nconcordant <- unlist(concordant_list)
-  ndiscordant <- unlist(discordant_list)
+  concordant_actual_list_with_scores <- lapply(concordant_actual_list, merge, somebreaks, all.x = TRUE)
+
+  nconcordant_adj <- sum(unlist(lapply(concordant_actual_list_with_scores, function(x){sum(x$Score, na.rm = TRUE)})))
+  ndiscordant <- sum(unlist(lapply(discordant_actual_list, nrow)))
+
+  # concordant_list <- lapply(binary_flags, sum)
+  # discordant_list <- lapply(binary_flags, function(x){length(x) - sum(x)})
+  #
+  # nconcordant <- unlist(concordant_list)
+  # ndiscordant <- unlist(discordant_list)
 
   # lapply(ssadistsss_lists, function(x){apply(x, 1, function(y){!any(is.na(y))})})
   # lapply(ssadistsss_lists, function(x){table(apply(x, 1, function(y){any(is.na(y))}))})
@@ -32,7 +40,8 @@ getScore <- function(pair, segmentTable){
   # unlist(mapply(function(s1, s2){lapply(s1$Start, breakpointScore, s2$Start)}, sample1_lists, sample2_lists))
 
 
-
+  score <- nconcordant_adj/(nconcordant_adj + 0.5 * ndiscordant)
+  return(score)
 
   scores <- unlist(lapply(sample1$Start, breakpointScore, sample2$Start))
   return(scores)
