@@ -16,6 +16,15 @@ getScore <- function(pair, segmentTable, breakpoint_scores){
   # sample2_lists <- c(list(), list(sample2["loss", on = "status"]), list(sample2["gain", on = "status"]))
   #
 
+  sample1_granges <- lapply(sample1_lists, makeGRangesFromDataFrame)
+  sample2_granges <- lapply(sample2_lists, makeGRangesFromDataFrame)
+
+  hits_start <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 10000)))]}, sample1_granges, sample2_granges)
+  hits_end <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 10000)))]}, sample1_granges, sample2_granges)
+
+  nonhits_start <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 10000)))]}, sample1_granges, sample2_granges)
+  hits_end <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 10000)))]}, sample1_granges, sample2_granges)
+
   merged_lists <- mapply(function(x, y){list(merge(x, y, by = c("Chr", "Start"), all = TRUE))}, sample1_lists, sample2_lists)
   binary_flags <- lapply(merged_lists, function(x){apply(x, 1, function(y){!any(is.na(y))})})
 
