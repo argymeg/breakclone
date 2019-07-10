@@ -1,5 +1,5 @@
 #pair must be a character vector!
-getScore <- function(pair, segmentTable){
+getScore <- function(pair, segmentTable, breakpoint_scores){
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
 
@@ -22,9 +22,11 @@ getScore <- function(pair, segmentTable){
   concordant_actual_list <- mapply(function(x,y){list(x[y,])}, merged_lists, binary_flags)
   discordant_actual_list <- mapply(function(x,y){list(x[!y,])}, merged_lists, binary_flags)
 
-  concordant_actual_list_with_scores <- lapply(concordant_actual_list, merge, somebreaks, all.x = TRUE)
+  #all.x here and na.rm one down are here for dev purposes - missing scores shouldn't be allowed!
+  concordant_actual_list_with_scores <- lapply(concordant_actual_list, merge, breakpoint_scores, all.x = TRUE)
 
-  nconcordant_adj <- sum(unlist(lapply(concordant_actual_list_with_scores, function(x){sum(x$Score, na.rm = TRUE)})))
+  #nconcordant_adj <- sum(unlist(lapply(concordant_actual_list_with_scores, function(x){sum(x$Score, na.rm = TRUE)})))
+  nconcordant_adj <- sum(unlist(lapply(concordant_actual_list_with_scores, function(x){sum(x$score)})))
   ndiscordant <- sum(unlist(lapply(discordant_actual_list, nrow)))
 
   # concordant_list <- lapply(binary_flags, sum)
@@ -55,5 +57,11 @@ getScore <- function(pair, segmentTable){
 #   }
 # }
 
-
+calculateBreakpointScores <- function(segmentTable){
+  all_breakpoints <- rbind(segmentTable[,c("Chr", "Start")], segmentTable[,c("Chr", "End")], use.names = FALSE)
+  breakpoint_scores <- as.data.table(dplyr::count(all_breakpoints, Chr, Start))
+#  breakpoint_scores$penalty <- breakpoint_scores$n / length(unique(segmentTable$SampleID))
+  breakpoint_scores$score <- 1 - breakpoint_scores$n / length(unique(segmentTable$SampleID))
+  return(breakpoint_scores)
+}
 
