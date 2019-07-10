@@ -43,16 +43,17 @@ getScore <- function(pair, segmentTable){
   score <- nconcordant_adj/(nconcordant_adj + 0.5 * ndiscordant)
   return(score)
 
-  scores <- unlist(lapply(sample1$Start, breakpointScore, sample2$Start))
-  return(scores)
+  # scores <- unlist(lapply(sample1$Start, breakpointScore, sample2$Start))
+  # return(scores)
 }
 
-breakpointScore <- function(breakpoint, sample2){
-  if(breakpoint %in% sample2){
-    return(1)
-  } else {
-    return(0)
-  }
-}
+# breakpointScore <- function(breakpoint, sample2){
+#   if(breakpoint %in% sample2){
+#     return(1)
+#   } else {
+#     return(0)
+#   }
+# }
+
 
 
