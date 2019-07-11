@@ -22,40 +22,20 @@ getScore <- function(pair, segmentTable, breakpoint_scores){
   hits_start <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 10000)))]}, sample1_granges, sample2_granges)
   hits_end <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 10000)))]}, sample1_granges, sample2_granges)
 
-  nonhits_start <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 10000)))]}, sample1_granges, sample2_granges)
-  hits_end <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 10000)))]}, sample1_granges, sample2_granges)
+  score_from_hits_start <- sum(unlist(lapply(hits_start, function(x){1 - countOverlaps(x, abg, type = "start", maxgap = 10000) / 85})))
+  score_from_hits_end <- sum(unlist(lapply(hits_end, function(x){1 - countOverlaps(x, abg, type = "end", maxgap = 10000) / 85})))
 
-  merged_lists <- mapply(function(x, y){list(merge(x, y, by = c("Chr", "Start"), all = TRUE))}, sample1_lists, sample2_lists)
-  binary_flags <- lapply(merged_lists, function(x){apply(x, 1, function(y){!any(is.na(y))})})
+  nonhits_start_1 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 10000)))]}, sample1_granges, sample2_granges)
+  nonhits_end_1 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 10000)))]}, sample1_granges, sample2_granges)
 
-  concordant_actual_list <- mapply(function(x,y){list(x[y,])}, merged_lists, binary_flags)
-  discordant_actual_list <- mapply(function(x,y){list(x[!y,])}, merged_lists, binary_flags)
+  nonhits_start_2 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 10000)))]}, sample2_granges, sample1_granges)
+  nonhits_end_2 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 10000)))]}, sample2_granges, sample1_granges)
 
-  #all.x here and na.rm one down are here for dev purposes - missing scores shouldn't be allowed!
-  concordant_actual_list_with_scores <- lapply(concordant_actual_list, merge, breakpoint_scores, all.x = TRUE)
-
-  #nconcordant_adj <- sum(unlist(lapply(concordant_actual_list_with_scores, function(x){sum(x$Score, na.rm = TRUE)})))
-  nconcordant_adj <- sum(unlist(lapply(concordant_actual_list_with_scores, function(x){sum(x$score)})))
-  ndiscordant <- sum(unlist(lapply(discordant_actual_list, nrow)))
-
-  # concordant_list <- lapply(binary_flags, sum)
-  # discordant_list <- lapply(binary_flags, function(x){length(x) - sum(x)})
-  #
-  # nconcordant <- unlist(concordant_list)
-  # ndiscordant <- unlist(discordant_list)
-
-  # lapply(ssadistsss_lists, function(x){apply(x, 1, function(y){!any(is.na(y))})})
-  # lapply(ssadistsss_lists, function(x){table(apply(x, 1, function(y){any(is.na(y))}))})
-  #
-  # lapply(sample1_lists, function(s1, s2){lapply(s1$Start, breakpointScore, s2$Start)}, sample2_lists)
-  # unlist(mapply(function(s1, s2){lapply(s1$Start, breakpointScore, s2$Start)}, sample1_lists, sample2_lists))
-
+  nconcordant_adj <- score_from_hits_start + score_from_hits_end
+  ndiscordant <- sum(unlist(lapply(c(nonhits_start_1, nonhits_start_2, nonhits_end_1, nonhits_end_2), length)))
 
   score <- nconcordant_adj/(nconcordant_adj + 0.5 * ndiscordant)
   return(score)
-
-  # scores <- unlist(lapply(sample1$Start, breakpointScore, sample2$Start))
-  # return(scores)
 }
 
 # breakpointScore <- function(breakpoint, sample2){
