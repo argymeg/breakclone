@@ -2,8 +2,8 @@
 getScore <- function(pair, segmentTable, abg = NULL){
 
   #This bit should go outside and only happen once!
-  all_breakpoints <- rbind(segmentTable[,c("Chr", "Start")], segmentTable[,c("Chr", "End")], use.names = FALSE)
-  abg <- makeGRangesFromDataFrame(all_breakpoints, start.field = "Start", end.field = "Start")
+  #all_breakpoints <- rbind(segmentTable[,c("Chr", "Start")], segmentTable[,c("Chr", "End")], use.names = FALSE)
+  #abg <- makeGRangesFromDataFrame(all_breakpoints, start.field = "Start", end.field = "Start")
 
   segmentTable <- segmentTable[!"Y", on = "Chr"]
 
@@ -38,7 +38,15 @@ getScore <- function(pair, segmentTable, abg = NULL){
   hits_end <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 5 * 11449)))]}, sample1_granges, sample2_granges)
 
   score_from_hits_start <- sum(unlist(lapply(hits_start, function(x){1 - countOverlaps(x, abgs, type = "start", maxgap = 5 * 11449) / 208})))
+  if(score_from_hits_start < 0){
+    warning("Hit next probe! Consider lowering the maxgap")
+    score_from_hits_start <- 0
+    }
   score_from_hits_end <- sum(unlist(lapply(hits_end, function(x){1 - countOverlaps(x, abge, type = "end", maxgap = 5 * 11449) / 208})))
+  if(score_from_hits_end < 0){
+    warning("Hit next probe! Consider lowering the maxgap")
+    score_from_hits_end <- 0
+    }
 
   # nonhits_start_1 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 11449)))]}, sample1_granges, sample2_granges)
   # nonhits_end_1 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 11449)))]}, sample1_granges, sample2_granges)
