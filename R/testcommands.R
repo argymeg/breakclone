@@ -4,8 +4,8 @@ library(data.table)
 
 tab <- readAlleleSpecific(c("../clonality_newer/salpies_clonality/Primaries/", "../clonality_newer/salpies_clonality/IR/"))
 p <- inferPairs(tab)
-bs <- calculateBreakpointScores(tab)
-getScore(as.character(p[4,]), tab)
+#bs <- calculateBreakpointScores(tab)
+
 
 
 
@@ -21,6 +21,8 @@ abg <- makeGRangesFromDataFrame(all_breakpoints, start.field = "Start", end.fiel
 abgs <- makeGRangesFromDataFrame(bigtab[,c("Chr", "Start")], start.field = "Start", end.field = "Start")
 abge <- makeGRangesFromDataFrame(bigtab[,c("Chr", "End")], start.field = "End", end.field = "End")
 
+
+getScore(as.character(p[4,]), tab)
 
 ###Don't run!
 reference <- numeric()
