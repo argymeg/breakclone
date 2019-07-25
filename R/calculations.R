@@ -13,6 +13,9 @@ getScore <- function(pair, segmentTable, abg = NULL){
   sample1$nTotal <- sample1$nMajor + sample1$nMinor
   sample2$nTotal <- sample2$nMajor + sample2$nMinor
 
+  sample1 <- handlePloidy(sample1)
+  sample2 <- handlePloidy(sample2)
+
   sample1$status <- ifelse(sample1$nTotal < 2, "loss", ifelse(sample1$nTotal == 2 & sample1$nMinor == 1, "norm", ifelse(sample1$nTotal == 2 & sample1$nMinor == 0, "cnloh", ifelse(sample1$nTotal > 4, "amp", "gain"))))
   sample2$status <- ifelse(sample2$nTotal < 2, "loss", ifelse(sample2$nTotal == 2 & sample2$nMinor == 1, "norm", ifelse(sample2$nTotal == 2 & sample2$nMinor == 0, "cnloh", ifelse(sample2$nTotal > 4, "amp", "gain"))))
 
@@ -60,6 +63,18 @@ getScore <- function(pair, segmentTable, abg = NULL){
 
   score <- nconcordant_adj/(nconcordant_adj + 0.5 * ndiscordant)
   return(score)
+}
+
+handlePloidy <- function(sample){
+  sample$segLen <- sample$End - sample$Start
+  sample_states <- aggregate(segLen ~ nTotal, sample, sum)
+  sample_states$adjLen <- as.numeric(sample_states$nTotal) * sample_states$segLen
+  sample_ploidy <- sum(thisweirdthing$coef) / sum(sample$segLen)
+
+  if(sample_ploidy >= 3.5){
+    warning("Sample ", sample$SampleID[1], " looks WGD, doing nothing for that")
+  }
+  return(sample)
 }
 
 # breakpointScore <- function(breakpoint, sample2){
