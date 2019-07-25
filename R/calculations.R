@@ -69,7 +69,7 @@ handlePloidy <- function(sample){
   sample$segLen <- sample$End - sample$Start
   sample_states <- aggregate(segLen ~ nTotal, sample, sum)
   sample_states$adjLen <- as.numeric(sample_states$nTotal) * sample_states$segLen
-  sample_ploidy <- sum(thisweirdthing$coef) / sum(sample$segLen)
+  sample_ploidy <- sum(sample_states$adjLen) / sum(sample$segLen)
 
   if(sample_ploidy >= 3.5){
     warning("Sample ", sample$SampleID[1], " looks WGD, doing nothing for that")
