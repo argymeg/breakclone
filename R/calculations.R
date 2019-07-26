@@ -72,7 +72,11 @@ handlePloidy <- function(sample){
   sample_ploidy <- sum(sample_states$adjLen) / sum(sample$segLen)
 
   if(sample_ploidy >= 3.5){
-    warning("Sample ", sample$SampleID[1], " looks WGD, doing nothing for that")
+    warning("Sample ", sample$SampleID[1], " looks WGD, inferring ancestral Cn state")
+    sample$nTotal <- ifelse(sample$nMinor == (sample$nTotal / 2), 2, sample$nTotal)
+    sample$nTotal <- ifelse(sample$nMinor == 0, 1, sample$nTotal)
+    sample$nTotal <- ifelse(sample$nTotal >= 3 & sample$nTotal <= 4 & sample$nMinor == 1, 2, sample$nTotal)
+    sample$nTotal <- ifelse(sample$nTotal >= 5 & sample$nTotal <= 10, 3, sample$nTotal)
   }
   return(sample)
 }
