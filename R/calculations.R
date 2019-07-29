@@ -1,5 +1,5 @@
 #pair must be a character vector!
-getScore <- function(pair, segmentTable, abg = NULL){
+getScore <- function(pair, segmentTable, abgs = abgs, abge = abge){
 
   #This bit should go outside and only happen once!
   #all_breakpoints <- rbind(segmentTable[,c("Chr", "Start")], segmentTable[,c("Chr", "End")], use.names = FALSE)
@@ -81,10 +81,22 @@ handlePloidy <- function(sample){
   return(sample)
 }
 
-getScores <- function(pairs, segmentTable){
-  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable)})
-  pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
-  results <- cbind.data.frame(p, pair_scores, pair_ps)
+getScores <- function(pairs, segmentTable, isRef = FALSE){
+  bigtab <- segmentTable
+  bigtab <- bigtab[!(bigtab$nMajor == 1 & bigtab$nMinor == 1),]
+
+  abgs <- makeGRangesFromDataFrame(bigtab[,c("Chr", "Start")], start.field = "Start", end.field = "Start")
+  abge <- makeGRangesFromDataFrame(bigtab[,c("Chr", "End")], start.field = "End", end.field = "End")
+
+  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, abgs, abge)})
+
+  if(isRef){
+    results <- pair_scores
+  } else {
+    pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
+    results <- cbind.data.frame(pairs, pair_scores, pair_ps)
+  }
+
   return(results)
 }
 
