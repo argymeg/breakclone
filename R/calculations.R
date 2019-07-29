@@ -1,4 +1,3 @@
-#pair must be a character vector!
 getScore <- function(pair, segmentTable, abgs = abgs, abge = abge){
 
   #This bit should go outside and only happen once!
@@ -100,19 +99,4 @@ getScores <- function(pairs, segmentTable, isRef = FALSE){
   return(results)
 }
 
-# breakpointScore <- function(breakpoint, sample2){
-#   if(breakpoint %in% sample2){
-#     return(1)
-#   } else {
-#     return(0)
-#   }
-# }
-
-# calculateBreakpointScores <- function(segmentTable){
-#   all_breakpoints <- rbind(segmentTable[,c("Chr", "Start")], segmentTable[,c("Chr", "End")], use.names = FALSE)
-#   breakpoint_scores <- as.data.table(dplyr::count(all_breakpoints, Chr, Start))
-# #  breakpoint_scores$penalty <- breakpoint_scores$n / length(unique(segmentTable$SampleID))
-#   breakpoint_scores$score <- 1 - breakpoint_scores$n / length(unique(segmentTable$SampleID))
-#   return(breakpoint_scores)
-# }
 
