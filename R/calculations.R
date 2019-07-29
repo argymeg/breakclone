@@ -81,6 +81,13 @@ handlePloidy <- function(sample){
   return(sample)
 }
 
+getScores <- function(pairs, segmentTable){
+  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable)})
+  pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
+  results <- cbind.data.frame(p, pair_scores, pair_ps)
+  return(results)
+}
+
 # breakpointScore <- function(breakpoint, sample2){
 #   if(breakpoint %in% sample2){
 #     return(1)

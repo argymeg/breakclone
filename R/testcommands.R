@@ -13,6 +13,8 @@ bigtab <- readAlleleSpecific(c("../clonality_newer/salpies_clonality/Primaries/"
 "../clonality_newer/salpies_clonality/DR/","../clonality_newer/salpies_clonality/DR_Contralateral/",
 "../clonality_newer/salpies_clonality/IR_Contralateral/", "../clonality_newer/salpies_clonality/Controls/"))
 
+bigtab <- tab
+bigtab <- bigtab[!(bigtab$nMajor == 1 & bigtab$nMinor == 1),]
 
 all_breakpoints <- rbind(bigtab[,c("Chr", "Start")], bigtab[,c("Chr", "End")], use.names = FALSE)
 abg <- makeGRangesFromDataFrame(all_breakpoints, start.field = "Start", end.field = "Start")
@@ -36,10 +38,8 @@ for(i in 1:10){
 load("reference_10x.RData")
 
 
-pair_scores <- apply(p, 1, function(x){getScore(as.character(x), tab)})
-pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
-results <- cbind.data.frame(p, pair_scores, pair_ps)
-write.csv(results, "ir_still_still_early_results.csv")
+results <- getScores(p, tab)
+write.csv(results, "ir_still_still_early_results_justthiscohort.csv")
 
 reftab <- readAlleleSpecific("../clonality_newer/salpies_clonality/Controls/")
 
