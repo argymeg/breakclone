@@ -5,8 +5,6 @@ getScore <- function(pair, segmentTable, abgs = abgs, abge = abge){
   #all_breakpoints <- rbind(segmentTable[,c("Chr", "Start")], segmentTable[,c("Chr", "End")], use.names = FALSE)
   #abg <- makeGRangesFromDataFrame(all_breakpoints, start.field = "Start", end.field = "Start")
 
-  segmentTable <- segmentTable[!"Y", on = "Chr"]
-
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
 
@@ -82,11 +80,13 @@ handlePloidy <- function(sample){
 }
 
 getScores <- function(pairs, segmentTable, isRef = FALSE){
-  bigtab <- segmentTable
-  bigtab <- bigtab[!(bigtab$nMajor == 1 & bigtab$nMinor == 1),]
+  segmentTable <- segmentTable[!"Y", on = "Chr"]
 
-  abgs <- makeGRangesFromDataFrame(bigtab[,c("Chr", "Start")], start.field = "Start", end.field = "Start")
-  abge <- makeGRangesFromDataFrame(bigtab[,c("Chr", "End")], start.field = "End", end.field = "End")
+  filteredTable <- segmentTable
+  filteredTable <- filteredTable[!(filteredTable$nMajor == 1 & filteredTable$nMinor == 1),]
+
+  abgs <- makeGRangesFromDataFrame(filteredTable[,c("Chr", "Start")], start.field = "Start", end.field = "Start")
+  abge <- makeGRangesFromDataFrame(filteredTable[,c("Chr", "End")], start.field = "End", end.field = "End")
 
   pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, abgs, abge)})
 
