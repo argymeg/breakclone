@@ -39,6 +39,18 @@ load("reference_10x.RData")
 pair_scores <- apply(p, 1, function(x){getScore(as.character(x), tab)})
 pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
 results <- cbind.data.frame(p, pair_scores, pair_ps)
-write.csv(results, "ir_early_results.csv")
+write.csv(results, "ir_still_still_early_results.csv")
+
+reftab <- readAlleleSpecific("../clonality_newer/salpies_clonality/Controls/")
+
+
+reference <- numeric()
+for(i in 1:10){
+  print(i)
+  randomise <- sample(unique(reftab$SampleID))
+  random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
+  apply(random_pairs, 1, function(x){if(x[1] == x[2]){stop("yes, it's possible: ", x[1])}})
+  reference <- c(reference, apply(random_pairs, 1, function(x){getScore(as.character(x), reftab)}))
+}
 
 
