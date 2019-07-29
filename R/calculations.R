@@ -1,9 +1,5 @@
 getScore <- function(pair, segmentTable, abgs = abgs, abge = abge){
 
-  #This bit should go outside and only happen once!
-  #all_breakpoints <- rbind(segmentTable[,c("Chr", "Start")], segmentTable[,c("Chr", "End")], use.names = FALSE)
-  #abg <- makeGRangesFromDataFrame(all_breakpoints, start.field = "Start", end.field = "Start")
-
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
 
@@ -99,4 +95,14 @@ getScores <- function(pairs, segmentTable, isRef = FALSE){
   return(results)
 }
 
-
+makeReference <- function(segmentTable, nperm = 10){
+  reference <- numeric()
+  for(i in 1:nperm){
+    message("Constructing reference: Iteration #", i)
+    randomise <- sample(unique(segmentTable$SampleID))
+    random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
+    apply(random_pairs, 1, function(x){if(x[1] == x[2]){stop("yes, it's possible: ", x[1])}})
+    reference <- c(reference, getScores(random_pairs, segmentTable, TRUE))
+  }
+  return(reference)
+}
