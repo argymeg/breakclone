@@ -1,4 +1,4 @@
-getScore <- function(pair, segmentTable, abgs = abgs, abge = abge){
+getScore <- function(pair, segmentTable, abgs, abge){
 
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
@@ -33,7 +33,7 @@ getScore <- function(pair, segmentTable, abgs = abgs, abge = abge){
   hits_start <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 5 * 11449)))]}, sample1_granges, sample2_granges)
   hits_end <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 5 * 11449)))]}, sample1_granges, sample2_granges)
 
-  score_from_hits_start <- sum(unlist(lapply(hits_start, function(x){1 - countOverlaps(x, abgs, type = "start", maxgap = 5 * 11449) / 208})))
+  score_from_hits_start <- sum(unlist(lapply(hits_start, function(x){1 - countOverlaps(query = x, subject = abgs, type = "start", maxgap = 5 * 11449) / 208})))
   if(score_from_hits_start < 0){
     warning("Hit next probe! Consider lowering the maxgap")
     score_from_hits_start <- 0
@@ -74,7 +74,7 @@ handlePloidy <- function(sample){
   return(sample)
 }
 
-getScores <- function(pairs, segmentTable, isRef = FALSE){
+getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE){
   segmentTable <- segmentTable[!"Y", on = "Chr"]
 
   filteredTable <- segmentTable
@@ -102,7 +102,7 @@ makeReference <- function(segmentTable, nperm = 10){
     randomise <- sample(unique(segmentTable$SampleID))
     random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
     apply(random_pairs, 1, function(x){if(x[1] == x[2]){stop("yes, it's possible: ", x[1])}})
-    reference <- c(reference, getScores(random_pairs, segmentTable, TRUE))
+    reference <- c(reference, getScores(pairs = random_pairs, segmentTable = segmentTable, isRef = TRUE))
   }
   return(reference)
 }
