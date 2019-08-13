@@ -16,6 +16,7 @@ readVCF <- function(directory, pattern = "*.vcf"){
   segmentList <- lapply(fileList, parseVCF)
   segmentList <- segmentList[!unlist(lapply(segmentList, function(x){any(is.na(x))}))]
   segmentTable <- data.table::rbindlist(segmentList)
+  colnames(segmentTable) <- c("SampleID", "Chr", "Start", "End", "Bins", "SVType", "Length")
   return(segmentTable)
 }
 
