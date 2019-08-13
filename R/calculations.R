@@ -74,11 +74,22 @@ handlePloidy <- function(sample){
   return(sample)
 }
 
-getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE){
-  segmentTable <- segmentTable[!"Y", on = "Chr"]
+getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE, cnType = c("alleleSpecific", "VCF"), listedSegments = c("all", "aberrant")){
+  cnType <- match.arg(cnType)
+  # listedSegments <- match.arg(listedSegments) LIES!!!!!
 
+  if(cnType == "alleleSpecific"){
+    listedSegments <- "all"
+  } else if(cnType == "VCF"){
+    listedSegments <- "aberrant"
+  }
+
+  segmentTable <- segmentTable[!"Y", on = "Chr"]
   filteredTable <- segmentTable
-  filteredTable <- filteredTable[!(filteredTable$nMajor == 1 & filteredTable$nMinor == 1),]
+
+  if(listedSegments == "all"){
+    filteredTable <- filteredTable[!(filteredTable$nMajor == 1 & filteredTable$nMinor == 1),]
+  }
 
   abgs <- makeGRangesFromDataFrame(filteredTable[,c("Chr", "Start")], start.field = "Start", end.field = "Start")
   abge <- makeGRangesFromDataFrame(filteredTable[,c("Chr", "End")], start.field = "End", end.field = "End")
@@ -88,6 +99,7 @@ getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE){
   if(isRef){
     results <- pair_scores
   } else {
+    if(is.null(reference)){warning("No reference supplied, p-values not calculated", immediate. = TRUE)}
     pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
     results <- cbind.data.frame(pairs, pair_scores, pair_ps)
   }
