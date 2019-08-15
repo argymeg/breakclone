@@ -1,4 +1,4 @@
-getScore <- function(pair, segmentTable, abgs, abge){
+getScore <- function(pair, segmentTable, populationBreakpoints){
 
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
@@ -15,9 +15,11 @@ getScore <- function(pair, segmentTable, abgs, abge){
   sample1 <- sample1[!"norm", on = "status"]
   sample2 <- sample2[!"norm", on = "status"]
 
+  # sample1_lists <- sapply(unique(sample1$status), function(x){c(list(sample1[x, on = "status"]))})
+  # sample2_lists <- sapply(unique(sample2$status), function(x){c(list(sample2[x, on = "status"]))})
 
-  sample1_lists <- c(list(), list(sample1["loss", on = "status"]), list(sample1["cnloh", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["amp", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["loss", on = "status"]))
-  sample2_lists <- c(list(), list(sample2["loss", on = "status"]), list(sample2["cnloh", on = "status"]), list(sample2["gain", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["cnloh", on = "status"]))
+  sample1_lists <- c(list(sample1["loss", on = "status"]), list(sample1["cnloh", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["amp", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["loss", on = "status"]))
+  sample2_lists <- c(list(sample2["loss", on = "status"]), list(sample2["cnloh", on = "status"]), list(sample2["gain", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["cnloh", on = "status"]))
 
   # sample1_lists <- c(list(), list(sample1["loss", on = "status"]), list(sample1["gain", on = "status"]))
   # sample2_lists <- c(list(), list(sample2["loss", on = "status"]), list(sample2["gain", on = "status"]))
@@ -33,12 +35,12 @@ getScore <- function(pair, segmentTable, abgs, abge){
   hits_start <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 5 * 11449)))]}, sample1_granges, sample2_granges)
   hits_end <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 5 * 11449)))]}, sample1_granges, sample2_granges)
 
-  score_from_hits_start <- sum(unlist(lapply(hits_start, function(x){1 - countOverlaps(query = x, subject = abgs, type = "start", maxgap = 5 * 11449) / 208})))
+  score_from_hits_start <- sum(unlist(lapply(hits_start, function(x){1 - countOverlaps(query = x, subject = populationBreakpoints$Starts, type = "start", maxgap = 5 * 11449) / 208})))
   if(score_from_hits_start < 0){
     warning("Hit next probe! Consider lowering the maxgap")
     score_from_hits_start <- 0
     }
-  score_from_hits_end <- sum(unlist(lapply(hits_end, function(x){1 - countOverlaps(x, abge, type = "end", maxgap = 5 * 11449) / 208})))
+  score_from_hits_end <- sum(unlist(lapply(hits_end, function(x){1 - countOverlaps(x, populationBreakpoints$Ends, type = "end", maxgap = 5 * 11449) / 208})))
   if(score_from_hits_end < 0){
     warning("Hit next probe! Consider lowering the maxgap")
     score_from_hits_end <- 0
@@ -74,27 +76,34 @@ handlePloidy <- function(sample){
   return(sample)
 }
 
-getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE, cnType = c("alleleSpecific", "VCF"), listedSegments = c("all", "aberrant")){
+collatePopulationBreakpoints <- function(segmentTable, cnType){
+  if(cnType == "alleleSpecific"){
+    segmentTable <- segmentTable[!(segmentTable$nMajor == 1 & segmentTable$nMinor == 1),]
+  }
+
+  populationStarts <- makeGRangesFromDataFrame(segmentTable[,c("Chr", "Start")], start.field = "Start", end.field = "Start")
+  populationEnds <- makeGRangesFromDataFrame(segmentTable[,c("Chr", "End")], start.field = "End", end.field = "End")
+
+  populationBreakpoints <- c(list(populationStarts), list(populationEnds))
+  names(populationBreakpoints) <- c("Starts", "Ends")
+  return(populationBreakpoints)
+}
+
+getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE, cnType = c("alleleSpecific", "VCF"), listedSegments = c("all", "aberrant"), excludeChromosomes = "Y"){
   cnType <- match.arg(cnType)
   # listedSegments <- match.arg(listedSegments) LIES!!!!!
 
-  if(cnType == "alleleSpecific"){
-    listedSegments <- "all"
-  } else if(cnType == "VCF"){
-    listedSegments <- "aberrant"
-  }
+  # if(cnType == "alleleSpecific"){
+  #   listedSegments <- "all"
+  # } else if(cnType == "VCF"){
+  #   listedSegments <- "aberrant"
+  # }
 
-  segmentTable <- segmentTable[!"Y", on = "Chr"]
-  filteredTable <- segmentTable
+  segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
 
-  if(listedSegments == "all"){
-    filteredTable <- filteredTable[!(filteredTable$nMajor == 1 & filteredTable$nMinor == 1),]
-  }
+  populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
 
-  abgs <- makeGRangesFromDataFrame(filteredTable[,c("Chr", "Start")], start.field = "Start", end.field = "Start")
-  abge <- makeGRangesFromDataFrame(filteredTable[,c("Chr", "End")], start.field = "End", end.field = "End")
-
-  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, abgs, abge)})
+  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints)})
 
   if(isRef){
     results <- pair_scores
