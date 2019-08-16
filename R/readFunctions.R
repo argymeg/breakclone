@@ -10,7 +10,7 @@ readVCF <- function(directory, pattern = "*.vcf"){
     vcf <- vcfR::read.vcfR(x, verbose = FALSE)
     extracted_fields <- vcfR::vcfR2tidy(vcf, info_only = TRUE, info_fields = c("SVTYPE", "END", "BINS", "SVLEN"))$fix[,c("CHROM", "POS", "END", "BINS", "SVTYPE", "SVLEN")]
     samplename <- colnames(vcf@gt)[2]
-    return(cbind(samplename, extracted_fields))
+    return(cbind(samplename, extracted_fields, stringsAsFactors = FALSE))
   }
   fileList <- dir(directory, pattern, full.names = TRUE)
   segmentList <- lapply(fileList, parseVCF)

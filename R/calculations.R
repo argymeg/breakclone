@@ -1,25 +1,30 @@
-getScore <- function(pair, segmentTable, populationBreakpoints){
+getScore <- function(pair, segmentTable, populationBreakpoints, cnType){
 
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
 
-  sample1$nTotal <- sample1$nMajor + sample1$nMinor
-  sample2$nTotal <- sample2$nMajor + sample2$nMinor
+  if(cnType == "alleleSpecific"){
+    sample1$nTotal <- sample1$nMajor + sample1$nMinor
+    sample2$nTotal <- sample2$nMajor + sample2$nMinor
 
-  sample1 <- handlePloidy(sample1)
-  sample2 <- handlePloidy(sample2)
+    sample1 <- handlePloidy(sample1)
+    sample2 <- handlePloidy(sample2)
 
-  sample1$status <- ifelse(sample1$nTotal < 2, "loss", ifelse(sample1$nTotal == 2 & sample1$nMinor == 1, "norm", ifelse(sample1$nTotal == 2 & sample1$nMinor == 0, "cnloh", ifelse(sample1$nTotal > 4, "amp", "gain"))))
-  sample2$status <- ifelse(sample2$nTotal < 2, "loss", ifelse(sample2$nTotal == 2 & sample2$nMinor == 1, "norm", ifelse(sample2$nTotal == 2 & sample2$nMinor == 0, "cnloh", ifelse(sample2$nTotal > 4, "amp", "gain"))))
+    sample1$status <- ifelse(sample1$nTotal < 2, "loss", ifelse(sample1$nTotal == 2 & sample1$nMinor == 1, "norm", ifelse(sample1$nTotal == 2 & sample1$nMinor == 0, "cnloh", ifelse(sample1$nTotal > 4, "amp", "gain"))))
+    sample2$status <- ifelse(sample2$nTotal < 2, "loss", ifelse(sample2$nTotal == 2 & sample2$nMinor == 1, "norm", ifelse(sample2$nTotal == 2 & sample2$nMinor == 0, "cnloh", ifelse(sample2$nTotal > 4, "amp", "gain"))))
 
-  sample1 <- sample1[!"norm", on = "status"]
-  sample2 <- sample2[!"norm", on = "status"]
+    sample1 <- sample1[!"norm", on = "status"]
+    sample2 <- sample2[!"norm", on = "status"]
 
-  # sample1_lists <- sapply(unique(sample1$status), function(x){c(list(sample1[x, on = "status"]))})
-  # sample2_lists <- sapply(unique(sample2$status), function(x){c(list(sample2[x, on = "status"]))})
+    sample1_lists <- c(list(sample1["loss", on = "status"]), list(sample1["cnloh", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["amp", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["loss", on = "status"]))
+    sample2_lists <- c(list(sample2["loss", on = "status"]), list(sample2["cnloh", on = "status"]), list(sample2["gain", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["cnloh", on = "status"]))
 
-  sample1_lists <- c(list(sample1["loss", on = "status"]), list(sample1["cnloh", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["amp", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["loss", on = "status"]))
-  sample2_lists <- c(list(sample2["loss", on = "status"]), list(sample2["cnloh", on = "status"]), list(sample2["gain", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["cnloh", on = "status"]))
+  } else if(cnType == "VCF"){
+    presentStates <- unique(c(sample1$SVType, sample2$SVType))
+
+    sample1_lists <- sapply(presentStates, function(x){c(list(sample1[x, on = "SVType"]))})
+    sample2_lists <- sapply(presentStates, function(x){c(list(sample2[x, on = "SVType"]))})
+  }
 
   # sample1_lists <- c(list(), list(sample1["loss", on = "status"]), list(sample1["gain", on = "status"]))
   # sample2_lists <- c(list(), list(sample2["loss", on = "status"]), list(sample2["gain", on = "status"]))
@@ -55,6 +60,8 @@ getScore <- function(pair, segmentTable, populationBreakpoints){
   nconcordant_adj <- score_from_hits_start + score_from_hits_end
   #ndiscordant <- 2 * (nrow(sample1) + nrow(sample2)) - sum(unlist(lapply(c(hits_start, hits_end), length)))
   ndiscordant <- nrow(sample1) + nrow(sample2) - 2 * nconcordant_adj
+  # Pretty sure the below calculation makes more sense, but leaving for now for continuity - fix soon
+  # ndiscordant <- 2 * (nrow(sample1) + nrow(sample2) - nconcordant_adj)
 
   score <- nconcordant_adj/(nconcordant_adj + 0.5 * ndiscordant)
   return(score)
@@ -103,7 +110,7 @@ getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE, cnTy
 
   populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
 
-  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints)})
+  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType)})
 
   if(isRef){
     results <- pair_scores
