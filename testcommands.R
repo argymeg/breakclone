@@ -1,8 +1,6 @@
 library(GenomicRanges)
 library(data.table)
 
-getScore(as.character(p[4,]), tab)
-
 tab <- readAlleleSpecific(c("~/Documents/clonality_newer/salpies_clonality/Primaries/", "~/Documents/clonality_newer/salpies_clonality/IR/"))
 p <- inferPairs(tab)
 

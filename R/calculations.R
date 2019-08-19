@@ -96,18 +96,9 @@ collatePopulationBreakpoints <- function(segmentTable, cnType){
   return(populationBreakpoints)
 }
 
-getScores <- function(pairs, segmentTable, reference = NULL, cnType = c("alleleSpecific", "VCF"), listedSegments = c("all", "aberrant"), excludeChromosomes = "Y"){
+getScores <- function(pairs, segmentTable, reference = NULL, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y"){
   cnType <- match.arg(cnType)
-  # listedSegments <- match.arg(listedSegments) LIES!!!!!
-
-  # if(cnType == "alleleSpecific"){
-  #   listedSegments <- "all"
-  # } else if(cnType == "VCF"){
-  #   listedSegments <- "aberrant"
-  # }
-
   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
-
   populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
 
   pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType)})
