@@ -14,6 +14,7 @@ results <- getScores(p, tab)
 
 
 vcftab <- readVCF("vcf_sample/")
+vcfref <- makeReference(vcftab, 2, "VCF")
 randomise <- sample(unique(vcftab$SampleID))
 random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
-resultsvcf <- getScores(random_pairs, vcftab, cnType = "VCF")
+resultsvcf <- getScores(random_pairs, vcftab, vcfref, cnType = "VCF")
