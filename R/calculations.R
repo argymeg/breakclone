@@ -1,3 +1,7 @@
+#' @import data.table
+#' @import GenomicRanges
+#' @import S4Vectors
+
 getScore <- function(pair, segmentTable, populationBreakpoints, cnType){
 
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
@@ -96,6 +100,7 @@ collatePopulationBreakpoints <- function(segmentTable, cnType){
   return(populationBreakpoints)
 }
 
+#' @export
 getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE, cnType = c("alleleSpecific", "VCF"), listedSegments = c("all", "aberrant"), excludeChromosomes = "Y"){
   cnType <- match.arg(cnType)
   # listedSegments <- match.arg(listedSegments) LIES!!!!!
@@ -123,6 +128,7 @@ getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE, cnTy
   return(results)
 }
 
+#' @export
 makeReference <- function(segmentTable, nperm = 10){
   reference <- numeric()
   for(i in 1:nperm){

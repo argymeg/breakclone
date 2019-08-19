@@ -10,3 +10,4 @@ License: WTFPL
 Encoding: UTF-8
 LazyData: true
 Imports: data.table, GenomicRanges, vcfR
+RoxygenNote: 6.1.1

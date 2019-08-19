@@ -1,3 +1,11 @@
+#' @import data.table
+#'
+
+#' @title Can't believe this
+#'
+#' @description This either
+#'
+#' @export
 readAlleleSpecific <- function(directory, pattern = "*_Segments_AbsCN_alleleSpecific.txt"){
   fileList <- dir(directory, pattern, full.names = TRUE)
   segmentList <- lapply(fileList, data.table::fread)
@@ -5,6 +13,7 @@ readAlleleSpecific <- function(directory, pattern = "*_Segments_AbsCN_alleleSpec
   return(segmentTable)
 }
 
+#' @export
 readVCF <- function(directory, pattern = "*.vcf"){
   parseVCF <- function(x){
     vcf <- vcfR::read.vcfR(x, verbose = FALSE)
@@ -20,6 +29,7 @@ readVCF <- function(directory, pattern = "*.vcf"){
   return(segmentTable)
 }
 
+#' @export
 inferPairs <- function(segmentTable){
   samples <- unique(segmentTable$SampleID)
   patients <- unique(sub("_.+", "", samples))
