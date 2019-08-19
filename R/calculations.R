@@ -99,44 +99,38 @@ collatePopulationBreakpoints <- function(segmentTable, cnType){
   names(populationBreakpoints) <- c("Starts", "Ends")
   return(populationBreakpoints)
 }
-
 #' @export
-getScores <- function(pairs, segmentTable, reference = NULL, isRef = FALSE, cnType = c("alleleSpecific", "VCF"), listedSegments = c("all", "aberrant"), excludeChromosomes = "Y"){
+getScores <- function(pairs, segmentTable, reference = NULL, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y"){
   cnType <- match.arg(cnType)
-  # listedSegments <- match.arg(listedSegments) LIES!!!!!
-
-  # if(cnType == "alleleSpecific"){
-  #   listedSegments <- "all"
-  # } else if(cnType == "VCF"){
-  #   listedSegments <- "aberrant"
-  # }
-
   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
-
   populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
 
   pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType)})
 
-  if(isRef){
-    results <- pair_scores
-  } else {
-    if(is.null(reference)){warning("No reference supplied, p-values not calculated", immediate. = TRUE)}
-    pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
-    results <- cbind.data.frame(pairs, pair_scores, pair_ps)
-  }
+  if(is.null(reference)){warning("No reference supplied, p-values not calculated", immediate. = TRUE)}
+  pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
+  results <- cbind.data.frame(pairs, pair_scores, pair_ps)
 
   return(results)
 }
 
 #' @export
-makeReference <- function(segmentTable, nperm = 10){
+makeReference <- function(segmentTable, nperm = 10, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y"){
+
+  cnType <- match.arg(cnType)
+  segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
+  populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
+
   reference <- numeric()
   for(i in 1:nperm){
     message("Constructing reference: Iteration #", i)
     randomise <- sample(unique(segmentTable$SampleID))
     random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
     apply(random_pairs, 1, function(x){if(x[1] == x[2]){stop("yes, it's possible: ", x[1])}})
-    reference <- c(reference, getScores(pairs = random_pairs, segmentTable = segmentTable, isRef = TRUE))
+    pair_scores <- apply(random_pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType)})
+    reference <- c(reference, pair_scores)
+
+
   }
   return(reference)
 }
