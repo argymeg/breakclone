@@ -2,7 +2,7 @@
 #' @import GenomicRanges
 #' @import S4Vectors
 
-getScore <- function(pair, segmentTable, populationBreakpoints, cnType){
+getScore <- function(pair, segmentTable, populationBreakpoints, cnType, maxgap){
 
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
@@ -41,15 +41,15 @@ getScore <- function(pair, segmentTable, populationBreakpoints, cnType){
   sample1_granges <- lapply(sample1_lists, function(x){tryCatch({makeGRangesFromDataFrame(x)}, error = function(e){GRanges()})})
   sample2_granges <- lapply(sample2_lists, function(x){tryCatch({makeGRangesFromDataFrame(x)}, error = function(e){GRanges()})})
 
-  hits_start <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 5 * 11449)))]}, sample1_granges, sample2_granges)
-  hits_end <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 5 * 11449)))]}, sample1_granges, sample2_granges)
+  hits_start <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = maxgap)))]}, sample1_granges, sample2_granges)
+  hits_end <- mapply(function(x,y){x[queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = maxgap)))]}, sample1_granges, sample2_granges)
 
-  score_from_hits_start <- sum(unlist(lapply(hits_start, function(x){1 - countOverlaps(query = x, subject = populationBreakpoints$Starts, type = "start", maxgap = 5 * 11449) / 208})))
+  score_from_hits_start <- sum(unlist(lapply(hits_start, function(x){1 - countOverlaps(query = x, subject = populationBreakpoints$Starts, type = "start", maxgap = maxgap) / length(unique(segmentTable$SampleID))})))
   if(score_from_hits_start < 0){
     warning("Hit next probe! Consider lowering the maxgap")
     score_from_hits_start <- 0
     }
-  score_from_hits_end <- sum(unlist(lapply(hits_end, function(x){1 - countOverlaps(x, populationBreakpoints$Ends, type = "end", maxgap = 5 * 11449) / 208})))
+  score_from_hits_end <- sum(unlist(lapply(hits_end, function(x){1 - countOverlaps(query = x, subject = populationBreakpoints$Ends, type = "end", maxgap = maxgap) / length(unique(segmentTable$SampleID))})))
   if(score_from_hits_end < 0){
     warning("Hit next probe! Consider lowering the maxgap")
     score_from_hits_end <- 0
@@ -99,13 +99,27 @@ collatePopulationBreakpoints <- function(segmentTable, cnType){
   names(populationBreakpoints) <- c("Starts", "Ends")
   return(populationBreakpoints)
 }
+
+calculateMaxGap <- function(segmentTable, cnType){
+  if(cnType == "alleleSpecific"){
+    avgProbeDistance <- mean((segmentTable$End - segmentTable$Start) / segmentTable$nProbes)
+    maxgap <- 5 * avgProbeDistance
+  } else if(cnType == "VCF"){
+    possBinSizes <- unique(segmentTable$Length / segmentTable$Bins)
+    binSize <- possBinSizes[which.max(tabulate(match(segmentTable$Length / segmentTable$Bins, possBinSizes)))]
+    maxgap <- 5 * binSize
+  }
+  return(maxgap)
+}
+
 #' @export
-getScores <- function(pairs, segmentTable, reference = NULL, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y"){
+getScores <- function(pairs, segmentTable, reference = NULL, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y", maxgap = NULL){
   cnType <- match.arg(cnType)
   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
   populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
+  if(is.null(maxgap)){maxgap <- calculateMaxGap(segmentTable, cnType)}
 
-  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType)})
+  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType, maxgap)})
 
   if(is.null(reference)){warning("No reference supplied, p-values not calculated", immediate. = TRUE)}
   pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
@@ -115,11 +129,12 @@ getScores <- function(pairs, segmentTable, reference = NULL, cnType = c("alleleS
 }
 
 #' @export
-makeReference <- function(segmentTable, nperm = 10, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y"){
+makeReference <- function(segmentTable, nperm = 10, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y", maxgap = NULL){
 
   cnType <- match.arg(cnType)
   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
   populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
+  if(is.null(maxgap)){maxgap <- calculateMaxGap(segmentTable, cnType)}
 
   reference <- numeric()
   for(i in 1:nperm){
@@ -127,7 +142,7 @@ makeReference <- function(segmentTable, nperm = 10, cnType = c("alleleSpecific",
     randomise <- sample(unique(segmentTable$SampleID))
     random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
     apply(random_pairs, 1, function(x){if(x[1] == x[2]){stop("yes, it's possible: ", x[1])}})
-    pair_scores <- apply(random_pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType)})
+    pair_scores <- apply(random_pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType, maxgap)})
     reference <- c(reference, pair_scores)
 
 
