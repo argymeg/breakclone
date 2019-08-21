@@ -6,9 +6,11 @@
 #' @description This either
 #'
 #' @export
-readAlleleSpecific <- function(directory, pattern = "*_Segments_AbsCN_alleleSpecific.txt"){
+readAlleleSpecific <- function(directory, pattern = "*_Segments_AbsCN_alleleSpecific.txt", sample.field = "SampleID",
+                               chr.field = "Chr", start.field = "Start", end.field = "End", nprobes.field = "nProbes",
+                               nmajor.field = "nMajor", nminor.field = "nMinor"){
   fileList <- dir(directory, pattern, full.names = TRUE)
-  segmentList <- lapply(fileList, data.table::fread)
+  segmentList <- lapply(fileList, data.table::fread[,c(sample.field, chr.field, start.field, end.field, nprobes.field, nmajor.field, nminor.field)])
   segmentTable <- data.table::rbindlist(segmentList)
   return(segmentTable)
 }
