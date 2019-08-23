@@ -8,10 +8,23 @@
 #' @export
 readAlleleSpecific <- function(directory, pattern = "*_Segments_AbsCN_alleleSpecific.txt", sample.field = "SampleID",
                                chr.field = "Chr", start.field = "Start", end.field = "End", nprobes.field = "nProbes",
-                               nmajor.field = "nMajor", nminor.field = "nMinor"){
+                               nmajor.field = "nMajor", nminor.field = "nMinor", ntotal.field = NULL){
   fileList <- dir(directory, pattern, full.names = TRUE)
-  segmentList <- lapply(fileList, data.table::fread[,c(sample.field, chr.field, start.field, end.field, nprobes.field, nmajor.field, nminor.field)])
+  #segmentList <- lapply(fileList, data.table::fread[,c(sample.field, chr.field, start.field, end.field, nprobes.field, nmajor.field, nminor.field)])
+  segmentList <- lapply(fileList, data.table::fread)
   segmentTable <- data.table::rbindlist(segmentList)
+
+  if(is.null(nmajor.field)){
+    nmajor.field = "nMajor"
+    segmentTable[,nmajor.field] <- segmentTable[,..ntotal.field] - segmentTable[,..nminor.field]
+  }
+
+  cols_needed <- c(sample.field, chr.field, start.field, end.field, nprobes.field, nmajor.field, nminor.field)
+  colnames_needed <- c("SampleID", "Chr", "Start", "End", "nProbes", "nMajor", "nMinor")
+  segmentTable <- segmentTable[,..cols_needed]
+  names(segmentTable) <- colnames_needed
+
+
   return(segmentTable)
 }
 
