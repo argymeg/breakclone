@@ -3,6 +3,7 @@
 export(getScores)
 export(inferPairs)
 export(makeReference)
+export(makeReferenceMixingPairs)
 export(plotScores)
 export(readAlleleSpecific)
 export(readVCF)
