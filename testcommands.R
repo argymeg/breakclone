@@ -9,7 +9,7 @@ ref <- makeReference(reftab, 5)
 ref <- makeReferenceMixingPairs(tab, p, 5)
 
 
-results <- getScores(p, tab)
+results <- getScores(p, tab, ref)
 # write.csv(results, "ir_still_still_early_results_justthiscohort.csv")
 plotScores(ref, results)
 
@@ -23,7 +23,7 @@ tabtaps <- readAlleleSpecific(c("/Users/argymeg/Documents/lcis-clonality/ALL_TAP
 ptaps <- inferPairs(tabtaps)
 tabtaps_ref <- tabtaps[grep("INV", tabtaps$SampleID, invert = TRUE),]
 reftaps <- makeReference(tabtaps_ref, 5, excludeChromosomes = "chrY")
-reftaps <- makeReferenceMixingPairs(tabtaps, ptaps, 5)
+reftaps <- makeReferenceMixingPairs(tabtaps, ptaps, 5, excludeChromosomes = "chrY")
 restaps <- getScores(ptaps, tabtaps, excludeChromosomes = "chrY", reference = reftaps)
 plotScores(reftaps, restaps)
 
