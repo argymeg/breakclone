@@ -63,9 +63,10 @@ getScore <- function(pair, segmentTable, populationBreakpoints, cnType, maxgap){
 
   nconcordant_adj <- score_from_hits_start + score_from_hits_end
   #ndiscordant <- 2 * (nrow(sample1) + nrow(sample2)) - sum(unlist(lapply(c(hits_start, hits_end), length)))
-  ndiscordant <- nrow(sample1) + nrow(sample2) - 2 * nconcordant_adj
-  # Pretty sure the below calculation makes more sense, but leaving for now for continuity - fix soon
-  # ndiscordant <- 2 * (nrow(sample1) + nrow(sample2) - nconcordant_adj)
+  # Old calculation
+  # ndiscordant <- nrow(sample1) + nrow(sample2) - 2 * nconcordant_adj
+  # Pretty sure the below calculation makes more sense - 2 breakpoints per row! Small difference but still.
+  ndiscordant <- 2 * (nrow(sample1) + nrow(sample2) - nconcordant_adj)
 
   score <- nconcordant_adj/(nconcordant_adj + 0.5 * ndiscordant)
   return(score)
