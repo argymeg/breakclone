@@ -50,9 +50,9 @@ readVCF <- function(directory, pattern = "*.vcf"){
 }
 
 #' @export
-inferPairs <- function(segmentTable){
+inferPairs <- function(segmentTable, sep = "_"){
   samples <- unique(segmentTable$SampleID)
-  patients <- unique(sub("_.+", "", samples))
+  patients <- unique(sub(paste0(sep, ".+"), "", samples))
   pairs <- lapply(patients, grep, samples)
   pairs <- pairs[lengths(pairs) == 2]
   pairs <- as.data.frame(matrix(unlist(pairs), nrow=length(pairs), byrow=T))
