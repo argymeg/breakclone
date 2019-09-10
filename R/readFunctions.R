@@ -62,3 +62,8 @@ inferPairs <- function(segmentTable, sep = "_"){
   return(pairs)
 }
 
+#' @export
+flipPairs <- function(pairs){
+  pairs <- pairs[,c(2,1)]
+  return(pairs)
+}
