@@ -3,6 +3,7 @@ library(data.table)
 
 tab <- readAlleleSpecific(c("~/Documents/clonality_newer/salpies_clonality/Primaries/", "~/Documents/clonality_newer/salpies_clonality/IR/"))
 p <- inferPairs(tab)
+p <- flipPairs(p)
 
 reftab <- readAlleleSpecific("~/Documents/clonality_newer/salpies_clonality/Controls/")
 ref <- makeReference(reftab, 5)
@@ -14,7 +15,10 @@ results <- getScores(p, tab, ref)
 plotScores(ref, results)
 
 vcftab <- readVCF("vcf_sample/")
-vcfref <- makeReference(vcftab, 2, "VCF")
+vcfpairs <- data.table::fread("nki_vcf_pairs.txt", header = FALSE)
+vcftab$SampleID <- substr(vcftab$SampleID, 12, 16)
+vcfref <- makeReference(vcftab, 2, "VCF", excludeChromosomes = "chrY")
+vcfref <- makeReferenceMixingPairs(vcftab, vcfpairs, 5, cnType = "VCF", excludeChromosomes = "chrY")
 randomise <- sample(unique(vcftab$SampleID))
 random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
 resultsvcf <- getScores(random_pairs, vcftab, vcfref, cnType = "VCF")
@@ -26,5 +30,17 @@ reftaps <- makeReference(tabtaps_ref, 5, excludeChromosomes = "chrY")
 reftaps <- makeReferenceMixingPairs(tabtaps, ptaps, 5, excludeChromosomes = "chrY")
 restaps <- getScores(ptaps, tabtaps, excludeChromosomes = "chrY", reference = reftaps)
 plotScores(reftaps, restaps)
+
+
+t <- readVCFMutations("Clonality_VCFs/")
+t <- t[grep("N", t$SampleID, invert = TRUE),]
+t$SampleID <- sub("P", "_P", t$SampleID)
+t$SampleID <- sub("IR", "_IR", t$SampleID)
+length(unique(t$SampleID))
+p <- inferPairs(t)
+p <- p[,2:1]
+ref <- makeReferenceMixingPairsMutations(t, p, 20)
+res <- getScoresMutations(p, t, ref)
+plotScores(ref, res)
 
 
