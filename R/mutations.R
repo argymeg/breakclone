@@ -61,9 +61,12 @@ getScoreMutations <- function(pair, segmentTable, populationMutations){
 # getScoreMutations(p, t)
 
 #' @export
-getScoresMutations <- function(pairs, segmentTable, reference = NULL, excludeChromosomes = "chrY"){
+getScoresMutations <- function(pairs, segmentTable, additionalMutations = NULL, reference = NULL, excludeChromosomes = "chrY"){
   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
   populationMutations <- collatePopulationMutations(segmentTable)
+  if(!is.null(additionalMutations)){
+    populationMutations <- c(populationMutations, additionalMutations)
+  }
   pair_scores <- apply(pairs, 1, function(x){getScoreMutations(as.character(x), segmentTable, populationMutations)})
 
   if(is.null(reference)){warning("No reference supplied, p-values not calculated", immediate. = TRUE)}
@@ -74,11 +77,13 @@ getScoresMutations <- function(pairs, segmentTable, reference = NULL, excludeChr
 }
 
 #' @export
-makeReferenceMixingPairsMutations <- function(segmentTable, pairs, nperm = 10, excludeChromosomes = "Y"){
+makeReferenceMixingPairsMutations <- function(segmentTable, pairs, nperm = 10, additionalMutations = NULL, excludeChromosomes = "Y"){
 
   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
   populationMutations <- collatePopulationMutations(segmentTable)
-
+  if(!is.null(additionalMutations)){
+    populationMutations <- c(populationMutations, additionalMutations)
+  }
   reference <- numeric()
   for(i in 1:nperm){
     message("Constructing reference: Iteration #", i)
