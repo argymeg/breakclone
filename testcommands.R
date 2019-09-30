@@ -40,7 +40,10 @@ length(unique(t$SampleID))
 p <- inferPairs(t)
 p <- p[,2:1]
 ref <- makeReferenceMixingPairsMutations(t, p, 20)
-res <- getScoresMutations(p, t, ref)
+res <- getScoresMutations(pairs = p, segmentTable = t, reference = ref)
 plotScores(ref, res)
 
+reftcga <- makeReferenceMixingPairsMutations(t, p, 20, additionalMutations = mutation_freqs, nAdditionalSamples = 1161)
+restcga <- getScoresMutations(pairs = p, segmentTable = t, additionalMutations = mutation_freqs, reference = reftcga, nAdditionalSamples = 1161)
+plotScores(reftcga, restcga)
 
