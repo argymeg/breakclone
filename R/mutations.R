@@ -18,7 +18,7 @@ readVCFMutations <- function(directory, pattern = "*.vcf"){
 }
 
 #' @export
-getScoreMutations <- function(pair, segmentTable, populationMutations){
+getScoreMutations <- function(pair, segmentTable, populationMutations, nAdditionalSamples = 0){
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
 
@@ -39,16 +39,19 @@ getScoreMutations <- function(pair, segmentTable, populationMutations){
 
   # score <- sum(hits_sample1$AF, hits_sample2$AF) / (0.5 * sum(length(sample1_granges), length(sample2_granges)))
 
+  nSamples <- length(unique(segmentTable$SampleID)) + nAdditionalSamples
+
   score <- sum(
     (hits_sample1$AF + hits_sample2$AF) / sqrt(
-      countOverlaps(hits_sample1, populationMutations) / length(unique(segmentTable$SampleID))
+      countOverlaps(hits_sample1, populationMutations) / nSamples
       )
     ) / (0.5 * sum(
       (sample1_granges$AF / sqrt(
-        countOverlaps(sample1_granges, populationMutations) / length(unique(segmentTable$SampleID)))
+        countOverlaps(sample1_granges, populationMutations) / nSamples
+        )
        ),
       (sample2_granges$AF / sqrt(
-        countOverlaps(sample2_granges, populationMutations) / length(unique(segmentTable$SampleID))
+        countOverlaps(sample2_granges, populationMutations) / nSamples
         )
        )
       )
@@ -61,13 +64,13 @@ getScoreMutations <- function(pair, segmentTable, populationMutations){
 # getScoreMutations(p, t)
 
 #' @export
-getScoresMutations <- function(pairs, segmentTable, additionalMutations = NULL, reference = NULL, excludeChromosomes = "chrY"){
+getScoresMutations <- function(pairs, segmentTable, additionalMutations = NULL, nAdditionalSamples = 0, reference = NULL, excludeChromosomes = "chrY"){
   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
   populationMutations <- collatePopulationMutations(segmentTable)
   if(!is.null(additionalMutations)){
     populationMutations <- c(populationMutations, additionalMutations)
   }
-  pair_scores <- apply(pairs, 1, function(x){getScoreMutations(as.character(x), segmentTable, populationMutations)})
+  pair_scores <- apply(pairs, 1, function(x){getScoreMutations(as.character(x), segmentTable, populationMutations, nAdditionalSamples)})
 
   if(is.null(reference)){warning("No reference supplied, p-values not calculated", immediate. = TRUE)}
   pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
@@ -77,7 +80,7 @@ getScoresMutations <- function(pairs, segmentTable, additionalMutations = NULL, 
 }
 
 #' @export
-makeReferenceMixingPairsMutations <- function(segmentTable, pairs, nperm = 10, additionalMutations = NULL, excludeChromosomes = "Y"){
+makeReferenceMixingPairsMutations <- function(segmentTable, pairs, nperm = 10, additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y"){
 
   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
   populationMutations <- collatePopulationMutations(segmentTable)
@@ -91,7 +94,7 @@ makeReferenceMixingPairsMutations <- function(segmentTable, pairs, nperm = 10, a
     random_pairs <- as.data.table(cbind(sample(pairs[[1]]), sample(pairs[[2]])))
     random_pairs <- random_pairs[!apply(random_pairs, 1, function(y){any(apply(pairs, 1, function(x){all(x == y)}))})]
 #    print(random_pairs)
-    pair_scores <- apply(random_pairs, 1, function(x){getScoreMutations(as.character(x), segmentTable, populationMutations)})
+    pair_scores <- apply(random_pairs, 1, function(x){getScoreMutations(as.character(x), segmentTable, populationMutations, nAdditionalSamples)})
     reference <- c(reference, pair_scores)
 
 
