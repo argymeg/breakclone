@@ -1,9 +1,9 @@
-library(GenomicRanges)
-library(data.table)
+library(breaklone)
 
-tab <- readAlleleSpecific(c("~/Documents/clonality_newer/salpies_clonality/Primaries/", "~/Documents/clonality_newer/salpies_clonality/IR/"))
+# tab <- readAlleleSpecific(c("~/Documents/clonality_newer/salpies_clonality/Primaries/", "~/Documents/clonality_newer/salpies_clonality/IR/"))
+tab <- readAlleleSpecific(directory = "~/Documents/ascat_collate_sloane_finals", pattern = "*Segments_AbsCN_alleleSpecific_profile.txt")
 p <- inferPairs(tab)
-p <- flipPairs(p)
+# p <- flipPairs(p)
 
 reftab <- readAlleleSpecific("~/Documents/clonality_newer/salpies_clonality/Controls/")
 ref <- makeReference(reftab, 5)
@@ -21,7 +21,9 @@ vcfref <- makeReference(vcftab, 2, "VCF", excludeChromosomes = "chrY")
 vcfref <- makeReferenceMixingPairs(vcftab, vcfpairs, 5, cnType = "VCF", excludeChromosomes = "chrY")
 randomise <- sample(unique(vcftab$SampleID))
 random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
-resultsvcf <- getScores(random_pairs, vcftab, vcfref, cnType = "VCF")
+resultsvcf <- getScores(vcfpairs, vcftab, vcfref, cnType = "VCF")
+plotScores(vcfref, resultsvcf)
+
 
 tabtaps <- readAlleleSpecific(c("/Users/argymeg/Documents/lcis-clonality/ALL_TAPS_OUTPUT/100probes/LCIS/", "/Users/argymeg/Documents/lcis-clonality/ALL_TAPS_OUTPUT/100probes/INV/"), pattern = "_segmentCN.txt", nmajor.field = NULL, ntotal.field = "Cn", nminor.field = "mCn", chr.field = "Chromosome", nprobes.field = "probes", sample.field = NULL)
 ptaps <- inferPairs(tabtaps)
@@ -32,7 +34,7 @@ restaps <- getScores(ptaps, tabtaps, excludeChromosomes = "chrY", reference = re
 plotScores(reftaps, restaps)
 
 
-t <- readVCFMutations("Clonality_VCFs/")
+t <- readVCFMutations("mutations/Clonality_VCFs/")
 t <- t[grep("N", t$SampleID, invert = TRUE),]
 t$SampleID <- sub("P", "_P", t$SampleID)
 t$SampleID <- sub("IR", "_IR", t$SampleID)
