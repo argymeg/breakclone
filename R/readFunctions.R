@@ -55,10 +55,12 @@ inferPairs <- function(segmentTable, sep = "_"){
   patients <- unique(sub(paste0(sep, ".+"), "", samples))
   pairs <- lapply(patients, grep, samples)
   triplets <- pairs[lengths(pairs) == 3]
-  triplets <- as.vector(sapply(triplets, combn, 2))
   pairs <- pairs[lengths(pairs) == 2]
   pairs <- unlist(pairs)
-  pairs <- c(pairs, triplets)
+  if(length(triplets) > 0){
+    triplets <- as.vector(sapply(triplets, combn, 2))
+    pairs <- c(pairs, triplets)
+  }
   pairs <- as.data.frame(matrix(pairs, nrow=length(pairs) / 2, byrow=T))
   pairs$V1 <- samples[pairs$V1]
   pairs$V2 <- samples[pairs$V2]
