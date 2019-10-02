@@ -29,7 +29,7 @@ getScoreMutations <- function(pair, segmentTable, populationMutations, nAddition
   sample1_granges$AF <- sample1_granges$AF / max(sample1_granges$AF)
   sample2_granges$AF <- sample2_granges$AF / max(sample2_granges$AF)
 
-  overlaps <- findOverlaps(sample1_granges, sample2_granges)
+  overlaps <- suppressWarnings(findOverlaps(sample1_granges, sample2_granges))
   hits_sample1 <- sample1_granges[queryHits(overlaps)]
   hits_sample2 <- sample2_granges[subjectHits(overlaps)]
   # hits_sample1$AF <- as.numeric(hits_sample1$AF)
