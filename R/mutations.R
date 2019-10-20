@@ -41,11 +41,18 @@ getScoreMutations <- function(pair, segmentTable, populationMutations, nAddition
 
   nSamples <- length(unique(segmentTable$SampleID)) + nAdditionalSamples
 
+
+
   score <- sum(
     (hits_sample1$AF + hits_sample2$AF) / sqrt(
       countOverlaps(hits_sample1, populationMutations) / nSamples
       )
-    ) / (0.5 * sum(
+    ) / (sum(
+      (hits_sample1$AF + hits_sample2$AF) / sqrt(
+        countOverlaps(hits_sample1, populationMutations) / nSamples
+        )
+      ) +
+      (0.5 * sum(
       (sample1_granges$AF / sqrt(
         countOverlaps(sample1_granges, populationMutations) / nSamples
         )
@@ -56,6 +63,7 @@ getScoreMutations <- function(pair, segmentTable, populationMutations, nAddition
        )
       )
     )
+  )
 
 
   return(score)
