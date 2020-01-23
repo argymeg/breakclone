@@ -2,3 +2,13 @@
 .Rhistory
 .RData
 .Ruserdata
+.DS_Store
+reference_ASCAT*
+reference_TAPS*
+*.pdf
+*.csv
+*.png
+referencemadness
+vcf_sample
+paper*
+results*

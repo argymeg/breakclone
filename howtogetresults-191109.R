@@ -2,7 +2,7 @@ library(breaklone)
 library(data.table)
 library(ggplot2)
 
-setwd("~/Documents/breaklone/results_191003/")
+# setwd("~/Documents/breaklone/results_191003/")
 # setwd("~/Documents/breaklone/results_191020_muts_tweaked/")
 
 tab <- readAlleleSpecific(directory = "~/Documents/ascat_collate_sloane_finals", pattern = "*Segments_AbsCN_alleleSpecific_profile.txt")
@@ -30,14 +30,14 @@ fwrite(resultsvcf, "results_nki.csv")
 ggsave("plot_nki.pdf")
 rm(list = ls())
 
-tabtaps <- readAlleleSpecific(c("/Users/argymeg/Documents/lcis-clonality/ALL_TAPS_OUTPUT/100probes/LCIS/", "/Users/argymeg/Documents/lcis-clonality/ALL_TAPS_OUTPUT/100probes/INV/"), pattern = "_segmentCN.txt", nmajor.field = NULL, ntotal.field = "Cn", nminor.field = "mCn", chr.field = "Chromosome", nprobes.field = "probes", sample.field = NULL)
-ptaps <- inferPairs(tabtaps)
+tabtaps <- readAlleleSpecific(c("/Users/argymeg/Documents/lcis-clonality/ALL_TAPS_OUTPUT/100probes/LCIS/", "/Users/argymeg/Documents/lcis-clonality/ALL_TAPS_OUTPUT/100probes/INV/", "~/Documents/breaklone/lcis_subsequent/collected/"), pattern = "_segmentCN.txt", nmajor.field = NULL, ntotal.field = "Cn", nminor.field = "mCn", chr.field = "Chromosome", nprobes.field = "probes", sample.field = NULL)
+ptaps <- data.table::fread("~/Documents/breaklone/lcis_subsequent/allpairs_reordered_bothcohorts.csv")
 # reftaps <- makeReferenceMixingPairs(tabtaps, ptaps, 200, excludeChromosomes = "chrY")
-reftaps <- readRDS("~/Documents/breaklone/chosen_references/reference_TAPS_100_run1_200iters.rds")
+reftaps <- readRDS("~/referenceforallthelcises.rds")
 restaps <- getScores(ptaps, tabtaps, excludeChromosomes = "chrY", reference = reftaps)
 plotScores(reftaps, restaps)
 
-fwrite(restaps, "results_lcis.csv")
+fwrite(restaps, "results_lcis_all.csv")
 ggsave("plot_lcis.pdf")
 rm(list = ls())
 
