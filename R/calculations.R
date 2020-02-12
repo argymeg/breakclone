@@ -173,3 +173,34 @@ makeReferenceMixingPairs <- function(segmentTable, pairs, nperm = 10, cnType = c
   }
   return(reference)
 }
+
+#' @export
+makeReferenceAllPairs <- function(segmentTable, pairs, patients = NULL, delimiter = "_", cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y", maxgap = NULL){
+
+  if(is.null(patients)){
+    p1 <- sapply(strsplit(pairs$Sample1, delimiter), "[", 1)
+    p2 <- sapply(strsplit(pairs$Sample2, delimiter), "[", 1)
+    if(all(p1 == p2)){
+      patients <- p1
+    } else {
+      stop("Autodetecting patient IDs failed!")
+    }
+  }
+  patients <- rbind(as.data.table(cbind(patients, pairs$Sample1)), as.data.table(cbind(patients, pairs$Sample2)))
+  colnames(patients) <- c("patient", "sample")
+  patients <- unique(patients)
+  setkey(patients, "sample")
+
+  refPairs <- expand.grid(list(Sample1 = unique(pairs$Sample1), Sample2 = unique(pairs$Sample2)), stringsAsFactors = FALSE)
+  refPairs <- refPairs[patients[refPairs$Sample1]$patient != patients[refPairs$Sample2]$patient,]
+
+  message("Making reference based on ", nrow(refPairs), " possible pairs, this might take a while")
+
+  cnType <- match.arg(cnType)
+  segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
+  populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
+  if(is.null(maxgap)){maxgap <- calculateMaxGap(segmentTable, cnType)}
+
+  reference <- apply(refPairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType, maxgap)})
+  return(reference)
+}
