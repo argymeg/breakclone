@@ -2,7 +2,7 @@
 #' @import GenomicRanges
 #' @import S4Vectors
 
-getScore <- function(pair, segmentTable, populationBreakpoints, cnType, maxgap){
+getScoreCN <- function(segmentTable, pair, populationBreakpoints, cnType, maxgap){
 
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
@@ -114,13 +114,13 @@ calculateMaxGap <- function(segmentTable, cnType){
 }
 
 #' @export
-getScores <- function(pairs, segmentTable, reference = NULL, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y", maxgap = NULL){
+calculateRelatednessCN <- function(segmentTable, pairs, reference = NULL, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y", maxgap = NULL){
   cnType <- match.arg(cnType)
   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
   populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
   if(is.null(maxgap)){maxgap <- calculateMaxGap(segmentTable, cnType)}
 
-  pair_scores <- apply(pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType, maxgap)})
+  pair_scores <- apply(pairs, 1, function(x){getScoreCN(segmentTable, as.character(x), populationBreakpoints, cnType, maxgap)})
 
   if(is.null(reference)){warning("No reference supplied, p-values not calculated", immediate. = TRUE)}
   pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
@@ -143,7 +143,7 @@ makeReference <- function(segmentTable, nperm = 10, cnType = c("alleleSpecific",
     randomise <- sample(unique(segmentTable$SampleID))
     random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
     apply(random_pairs, 1, function(x){if(x[1] == x[2]){stop("yes, it's possible: ", x[1])}})
-    pair_scores <- apply(random_pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType, maxgap)})
+    pair_scores <- apply(random_pairs, 1, function(x){getScoreCN(segmentTable, as.character(x), populationBreakpoints, cnType, maxgap)})
     reference <- c(reference, pair_scores)
 
 
@@ -166,7 +166,7 @@ makeReferenceMixingPairs <- function(segmentTable, pairs, nperm = 10, cnType = c
     random_pairs <- as.data.table(cbind(sample(pairs[[1]]), sample(pairs[[2]])))
     random_pairs <- random_pairs[!apply(random_pairs, 1, function(y){any(apply(pairs, 1, function(x){all(x == y)}))})]
 
-    pair_scores <- apply(random_pairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType, maxgap)})
+    pair_scores <- apply(random_pairs, 1, function(x){getScoreCN(segmentTable, as.character(x), populationBreakpoints, cnType, maxgap)})
     reference <- c(reference, pair_scores)
 
 
@@ -201,6 +201,6 @@ makeReferenceAllPairs <- function(segmentTable, pairs, patients = NULL, delimite
   populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
   if(is.null(maxgap)){maxgap <- calculateMaxGap(segmentTable, cnType)}
 
-  reference <- apply(refPairs, 1, function(x){getScore(as.character(x), segmentTable, populationBreakpoints, cnType, maxgap)})
+  reference <- apply(refPairs, 1, function(x){getScoreCN(segmentTable, as.character(x), populationBreakpoints, cnType, maxgap)})
   return(reference)
 }
