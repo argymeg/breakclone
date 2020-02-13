@@ -1,12 +1,11 @@
 Package: breaklone
 Type: Package
 Title: Estimating clonal relatedness probability between tumour pairs
-Version: 0.2.2
+Version: 0.3
 Author: argymeg
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: WTFPL
+Maintainer: argymeg <argymeg@gmail.com>
+Description: Estimate clonal relatedness probability between tumour pairs based on copy number breakpoints or mutation data.
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports: data.table, GenomicRanges, vcfR

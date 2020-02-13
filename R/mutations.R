@@ -1,6 +1,6 @@
-getScoreMutations <- function(segmentTable, pair, populationMutations, nAdditionalSamples = 0){
-  sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
-  sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
+getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditionalSamples = 0){
+  sample1 <- mutationTable[mutationTable$SampleID == pair[1],]
+  sample2 <- mutationTable[mutationTable$SampleID == pair[2],]
 
   sample1_granges <- makeGRangesFromDataFrame(sample1, start.field = "Pos", end.field = "Pos", keep.extra.columns = TRUE)
   sample2_granges <- makeGRangesFromDataFrame(sample2, start.field = "Pos", end.field = "Pos", keep.extra.columns = TRUE)
@@ -19,7 +19,7 @@ getScoreMutations <- function(segmentTable, pair, populationMutations, nAddition
 
   # score <- sum(hits_sample1$AF, hits_sample2$AF) / (0.5 * sum(length(sample1_granges), length(sample2_granges)))
 
-  nSamples <- length(unique(segmentTable$SampleID)) + nAdditionalSamples
+  nSamples <- length(unique(mutationTable$SampleID)) + nAdditionalSamples
 
 
 
@@ -49,14 +49,26 @@ getScoreMutations <- function(segmentTable, pair, populationMutations, nAddition
   return(score)
 }
 
+#' Calculate relatedness scores for paired tumours
+#'
+#' Calculates the relatedness scores and (optionally) p-values for paired tumours from mutation data
+#' @param mutationTable A table of mutations in each sample and their allele frequencies.
+#' @param pairs A table of paired samples from the dataset, to test for relatedness.
+#' @param additionalMutations A table of mutations to be taken into account when calculating population frequencies. At a minimum, a table of the mutations in the population being studied. This is more informative when tumour type-specific mutations are included from external sources (e.g. TCGA).
+#' @param nAdditionalSamples The number of samples used to derive the additional mutations table.
+#' @param reference A numeric vector of pair scores comprising the reference distribution, generated from the \code{makeReferenceMutations} function. If omitted, p-value calculation will be skipped.
+#' @param excludeChromosomes The name(s) of any chromosomes to be excluded.
+
+#' @return A data frame listing the tumour pairs contained in \code{pairs}, their relatedness scores and p-values for relatedness.
+
 #' @export
-calculateRelatednessMutations <- function(pairs, segmentTable, additionalMutations = NULL, nAdditionalSamples = 0, reference = NULL, excludeChromosomes = "chrY"){
-  segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
-  populationMutations <- collatePopulationMutations(segmentTable)
+calculateRelatednessMutations <- function(mutationTable, pairs, additionalMutations = NULL, nAdditionalSamples = 0, reference = NULL, excludeChromosomes = "chrY"){
+  mutationTable <- mutationTable[!excludeChromosomes, on = "Chr"]
+  populationMutations <- collatePopulationMutations(mutationTable)
   if(!is.null(additionalMutations)){
     populationMutations <- c(populationMutations, additionalMutations)
   }
-  pair_scores <- apply(pairs, 1, function(x){getScoreMutations(segmentTable, as.character(x), populationMutations, nAdditionalSamples)})
+  pair_scores <- apply(pairs, 1, function(x){getScoreMutations(mutationTable, as.character(x), populationMutations, nAdditionalSamples)})
 
   if(is.null(reference)){warning("No reference supplied, p-values not calculated", immediate. = TRUE)}
   pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
@@ -65,31 +77,44 @@ calculateRelatednessMutations <- function(pairs, segmentTable, additionalMutatio
   return(results)
 }
 
-#' #' @export
-#' makeReferenceMixingPairsMutations <- function(segmentTable, pairs, nperm = 10, additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y"){
+# #' @export
+# makeReferenceMixingPairsMutations <- function(mutationTable, pairs, nperm = 10, additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y"){
+#
+#   mutationTable <- mutationTable[!excludeChromosomes, on = "Chr"]
+#   populationMutations <- collatePopulationMutations(mutationTable)
+#   if(!is.null(additionalMutations)){
+#     populationMutations <- c(populationMutations, additionalMutations)
+#   }
+#   reference <- numeric()
+#   for(i in 1:nperm){
+#     message("Constructing reference: Iteration #", i)
+#
+#     random_pairs <- as.data.table(cbind(sample(pairs[[1]]), sample(pairs[[2]])))
+#     random_pairs <- random_pairs[!apply(random_pairs, 1, function(y){any(apply(pairs, 1, function(x){all(x == y)}))})]
+# #    print(random_pairs)
+#     pair_scores <- apply(random_pairs, 1, function(x){getScoreMutations(mutationTable, as.character(x), populationMutations, nAdditionalSamples)})
+#     reference <- c(reference, pair_scores)
+#
+#
+#   }
+#   return(reference)
+# }
+
+
+#' Generate reference distribution from mutation data
 #'
-#'   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
-#'   populationMutations <- collatePopulationMutations(segmentTable)
-#'   if(!is.null(additionalMutations)){
-#'     populationMutations <- c(populationMutations, additionalMutations)
-#'   }
-#'   reference <- numeric()
-#'   for(i in 1:nperm){
-#'     message("Constructing reference: Iteration #", i)
-#'
-#'     random_pairs <- as.data.table(cbind(sample(pairs[[1]]), sample(pairs[[2]])))
-#'     random_pairs <- random_pairs[!apply(random_pairs, 1, function(y){any(apply(pairs, 1, function(x){all(x == y)}))})]
-#' #    print(random_pairs)
-#'     pair_scores <- apply(random_pairs, 1, function(x){getScoreMutations(segmentTable, as.character(x), populationMutations, nAdditionalSamples)})
-#'     reference <- c(reference, pair_scores)
-#'
-#'
-#'   }
-#'   return(reference)
-#' }
+#' Generates the reference distribution of concordance scores from unpaired tumours for a given dataset.
+#' @param mutationTable A table of mutations in each sample and their allele frequencies.
+#' @param pairs A table of paired samples from the dataset. All tumours present in this table will be paired with all tumours from other patients.
+#' @param patients A character vector of patient IDs, parallel to the pairs table, used to prevent tumours originating from the same patient from being used in the reference distribution (optional)
+#' @param delimiter A character separating patient IDs from tumour-specific identifiers in the sample IDs. Ignored if \code{patients} is provided.
+#' @param additionalMutations A table of mutations to be taken into account when calculating population frequencies. At a minimum, a table of the mutations in the population being studied. This is more informative when tumour type-specific mutations are included from external sources (e.g. TCGA).
+#' @param nAdditionalSamples The number of samples used to derive the additional mutations table.
+#' @param excludeChromosomes The name(s) of any chromosomes to be excluded.
+#' @return A numeric vector of pair scores comprising the reference distribution.
 
 #' @export
-makeReferenceAllPairsMutations <- function(segmentTable, pairs, patients = NULL, delimiter = "_", additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y"){
+makeReferenceMutations <- function(mutationTable, pairs, patients = NULL, delimiter = "_", additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y"){
 
 
   if(is.null(patients)){
@@ -111,22 +136,22 @@ makeReferenceAllPairsMutations <- function(segmentTable, pairs, patients = NULL,
 
   message("Making reference based on ", nrow(refPairs), " possible pairs, this might take a while")
 
-  segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
-  populationMutations <- collatePopulationMutations(segmentTable)
+  mutationTable <- mutationTable[!excludeChromosomes, on = "Chr"]
+  populationMutations <- collatePopulationMutations(mutationTable)
   if(!is.null(additionalMutations)){
     populationMutations <- c(populationMutations, additionalMutations)
   }
 
-  reference <- apply(refPairs, 1, function(x){getScoreMutations(segmentTable, as.character(x), populationMutations, nAdditionalSamples)})
+  reference <- apply(refPairs, 1, function(x){getScoreMutations(mutationTable, as.character(x), populationMutations, nAdditionalSamples)})
 
 
   return(reference)
 }
 
 
-collatePopulationMutations <- function(segmentTable){
+collatePopulationMutations <- function(mutationTable){
 
-  populationMutations <- makeGRangesFromDataFrame(segmentTable[,c("Chr", "Pos")], start.field = "Pos", end.field = "Pos")
+  populationMutations <- makeGRangesFromDataFrame(mutationTable[,c("Chr", "Pos")], start.field = "Pos", end.field = "Pos")
   return(populationMutations)
 }
 
