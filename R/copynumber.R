@@ -210,12 +210,12 @@ makeReferenceCN <- function(segmentTable, pairs, patients = NULL, delimiter = "_
       stop("Autodetecting patient IDs failed!")
     }
   }
-  patients <- rbind(as.data.table(cbind(patients, pairs$Sample1)), as.data.table(cbind(patients, pairs$Sample2)))
+  patients <- rbind(as.data.table(cbind(patients, pairs[[1]])), as.data.table(cbind(patients, pairs[[2]])))
   colnames(patients) <- c("patient", "sample")
   patients <- unique(patients)
   setkey(patients, "sample")
 
-  refPairs <- expand.grid(list(Sample1 = unique(pairs$Sample1), Sample2 = unique(pairs$Sample2)), stringsAsFactors = FALSE)
+  refPairs <- expand.grid(list(Sample1 = unique(pairs[[1]]), Sample2 = unique(pairs[[2]])), stringsAsFactors = FALSE)
   refPairs <- refPairs[patients[refPairs$Sample1]$patient != patients[refPairs$Sample2]$patient,]
 
   message("Making reference based on ", nrow(refPairs), " possible pairs, this might take a while")
