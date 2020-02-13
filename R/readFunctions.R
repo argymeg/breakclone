@@ -73,3 +73,22 @@ flipPairs <- function(pairs){
   pairs <- pairs[,c(2,1)]
   return(pairs)
 }
+
+#' @export
+readVCFMutations <- function(directory, pattern = "*.vcf"){
+  parseVCF <- function(x){
+    vcf <- vcfR::read.vcfR(x, verbose = FALSE)
+    extracted_fields <- vcfR::vcfR2tidy(vcf, single_frame = TRUE, verbose = FALSE)$dat
+    extracted_fields <- extracted_fields[,c("CHROM", "POS", "Indiv", "gt_AF")]
+    extracted_fields <- extracted_fields[order(extracted_fields$Indiv),]
+    return(extracted_fields)
+  }
+  fileList <- dir(directory, pattern, full.names = TRUE)
+  segmentList <- lapply(fileList, parseVCF)
+  segmentList <- segmentList[!unlist(lapply(segmentList, function(x){any(is.na(x))}))]
+  segmentTable <- data.table::rbindlist(segmentList)
+  colnames(segmentTable) <- c("Chr", "Pos", "SampleID", "AF")
+  segmentTable$AF <- as.numeric(segmentTable$AF)
+  segmentTable <- na.omit(segmentTable)
+  return(segmentTable)
+}
