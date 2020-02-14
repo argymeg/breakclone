@@ -6,8 +6,8 @@ getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditio
   sample2_granges <- makeGRangesFromDataFrame(sample2, start.field = "Pos", end.field = "Pos", keep.extra.columns = TRUE)
   # sample1_granges$AF <- as.numeric(sample1_granges$AF)
   # sample2_granges$AF <- as.numeric(sample2_granges$AF)
-  sample1_granges$AF <- sample1_granges$AF / max(sample1_granges$AF)
-  sample2_granges$AF <- sample2_granges$AF / max(sample2_granges$AF)
+#  sample1_granges$AF <- sample1_granges$AF / max(sample1_granges$AF)
+#  sample2_granges$AF <- sample2_granges$AF / max(sample2_granges$AF)
 
   overlaps <- suppressWarnings(findOverlaps(sample1_granges, sample2_granges))
   hits_sample1 <- sample1_granges[queryHits(overlaps)]
@@ -21,7 +21,20 @@ getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditio
 
   nSamples <- length(unique(mutationTable$SampleID)) + nAdditionalSamples
 
+  #print(hits_sample1)
+  #print(hits_sample2)
 
+  # Code to write out common mutations - might be useful to keep as a feature but will need to rewrite the function returns
+  common_muts <- cbind(as.data.frame(hits_sample1)[,c(1,2,7)], as.data.frame(hits_sample2)[,7])
+  s1name <- as.data.frame(hits_sample1)$SampleID[1]
+  s2name <- as.data.frame(hits_sample2)$SampleID[1]
+  colnames(common_muts)[1] <- "chr"
+  colnames(common_muts)[2] <- "pos"
+  colnames(common_muts)[3] <- s1name
+  colnames(common_muts)[4] <- s2name
+  print(common_muts)
+  fname <- paste0(s1name, "-", s2name, "-common.txt")
+  fwrite(common_muts, fname, sep = "\t")
 
   score <- sum(
     (hits_sample1$AF + hits_sample2$AF) / sqrt(
