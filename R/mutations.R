@@ -12,8 +12,14 @@ getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditio
   overlaps <- suppressWarnings(findOverlaps(sample1_granges, sample2_granges))
   hits_sample1 <- sample1_granges[queryHits(overlaps)]
   hits_sample2 <- sample2_granges[subjectHits(overlaps)]
-  nonhits_sample1 <- sample1_granges[-queryHits(overlaps)]
-  nonhits_sample2 <- sample2_granges[-subjectHits(overlaps)]
+  if(length(overlaps) > 0){
+    nonhits_sample1 <- sample1_granges[-queryHits(overlaps)]
+    nonhits_sample2 <- sample2_granges[-subjectHits(overlaps)]
+  } else {
+    nonhits_sample1 <- sample1_granges
+    nonhits_sample2 <- sample2_granges
+  }
+
   # hits_sample1$AF <- as.numeric(hits_sample1$AF)
   # hits_sample2$AF <- as.numeric(hits_sample2$AF)
   # hits_sample1$AF <- hits_sample1$AF / max(sample1_granges$AF)
