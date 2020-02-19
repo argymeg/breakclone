@@ -1,4 +1,4 @@
-getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditionalSamples = 0){
+getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditionalSamples = 0, scaleAFs){
   sample1 <- mutationTable[mutationTable$SampleID == pair[1],]
   sample2 <- mutationTable[mutationTable$SampleID == pair[2],]
 
@@ -6,8 +6,11 @@ getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditio
   sample2_granges <- makeGRangesFromDataFrame(sample2, start.field = "Pos", end.field = "Pos", keep.extra.columns = TRUE)
   # sample1_granges$AF <- as.numeric(sample1_granges$AF)
   # sample2_granges$AF <- as.numeric(sample2_granges$AF)
-  sample1_granges$AF <- sample1_granges$AF / max(sample1_granges$AF)
-  sample2_granges$AF <- sample2_granges$AF / max(sample2_granges$AF)
+  if(scaleAFs){
+    sample1_granges$AF <- sample1_granges$AF / max(sample1_granges$AF)
+    sample2_granges$AF <- sample2_granges$AF / max(sample2_granges$AF)
+  }
+
 
   overlaps <- suppressWarnings(findOverlaps(sample1_granges, sample2_granges))
   hits_sample1 <- sample1_granges[queryHits(overlaps)]
@@ -70,13 +73,13 @@ getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditio
 #' @return A data frame listing the tumour pairs contained in \code{pairs}, their relatedness scores and p-values for relatedness.
 
 #' @export
-calculateRelatednessMutations <- function(mutationTable, pairs, additionalMutations = NULL, nAdditionalSamples = 0, reference = NULL, excludeChromosomes = "chrY"){
+calculateRelatednessMutations <- function(mutationTable, pairs, additionalMutations = NULL, nAdditionalSamples = 0, reference = NULL, excludeChromosomes = "chrY", scaleAFs = FALSE){
   mutationTable <- mutationTable[!excludeChromosomes, on = "Chr"]
   populationMutations <- collatePopulationMutations(mutationTable)
   if(!is.null(additionalMutations)){
     populationMutations <- c(populationMutations, additionalMutations)
   }
-  pair_scores <- apply(pairs, 1, function(x){getScoreMutations(mutationTable, as.character(x), populationMutations, nAdditionalSamples)})
+  pair_scores <- apply(pairs, 1, function(x){getScoreMutations(mutationTable, as.character(x), populationMutations, nAdditionalSamples, scaleAFs)})
 
   if(is.null(reference)){warning("No reference supplied, p-values not calculated", immediate. = TRUE)}
   pair_ps <- unlist(lapply(pair_scores, function(x){mean(x <= reference)}))
@@ -122,7 +125,7 @@ calculateRelatednessMutations <- function(mutationTable, pairs, additionalMutati
 #' @return A numeric vector of pair scores comprising the reference distribution.
 
 #' @export
-makeReferenceMutations <- function(mutationTable, pairs, patients = NULL, delimiter = "_", additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y"){
+makeReferenceMutations <- function(mutationTable, pairs, patients = NULL, delimiter = "_", additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y", scaleAFs = FALSE){
 
 
   if(is.null(patients)){
@@ -150,7 +153,7 @@ makeReferenceMutations <- function(mutationTable, pairs, patients = NULL, delimi
     populationMutations <- c(populationMutations, additionalMutations)
   }
 
-  reference <- apply(refPairs, 1, function(x){getScoreMutations(mutationTable, as.character(x), populationMutations, nAdditionalSamples)})
+  reference <- apply(refPairs, 1, function(x){getScoreMutations(mutationTable, as.character(x), populationMutations, nAdditionalSamples, scaleAFs)})
 
 
   return(reference)
