@@ -69,7 +69,7 @@ getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditio
 #' @param nAdditionalSamples The number of samples used to derive the additional mutations table.
 #' @param reference A numeric vector of pair scores comprising the reference distribution, generated from the \code{makeReferenceMutations} function. If omitted, p-value calculation will be skipped.
 #' @param excludeChromosomes The name(s) of any chromosomes to be excluded.
-
+#' @param scaleAFs Scale AFs per-sample by the highest AF within each sample. Only recommended for data with significant normal contamination that you are confident contains at least one clonal mutation per sample.
 #' @return A data frame listing the tumour pairs contained in \code{pairs}, their relatedness scores and p-values for relatedness.
 
 #' @export
@@ -122,6 +122,7 @@ calculateRelatednessMutations <- function(mutationTable, pairs, additionalMutati
 #' @param additionalMutations A table of mutations to be taken into account when calculating population frequencies. At a minimum, a table of the mutations in the population being studied. This is more informative when tumour type-specific mutations are included from external sources (e.g. TCGA).
 #' @param nAdditionalSamples The number of samples used to derive the additional mutations table.
 #' @param excludeChromosomes The name(s) of any chromosomes to be excluded.
+#' @param scaleAFs Scale AFs per-sample by the highest AF within each sample. Only recommended for data with significant normal contamination that you are confident contains at least one clonal mutation per sample.
 #' @return A numeric vector of pair scores comprising the reference distribution.
 
 #' @export
