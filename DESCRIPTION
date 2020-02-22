@@ -1,7 +1,7 @@
 Package: breakclone
 Type: Package
 Title: Estimating clonal relatedness probability between tumour pairs
-Version: 0.3.1
+Version: 0.3.2
 Author: argymeg
 Maintainer: argymeg <argymeg@gmail.com>
 Description: Estimate clonal relatedness probability between tumour pairs based on copy number breakpoints or mutation data.
