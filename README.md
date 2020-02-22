@@ -8,7 +8,7 @@ Breakclone is a package for assessing clonal relationships of tumour pairs based
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This is a basic example of usage with copy number data:
 
 ``` r
 library(breakclone)
@@ -19,3 +19,13 @@ results <- calculateRelatednessCn(table, pairs, reference)
 plotScoresDensity(reference, results)
 ```
 
+This is a very similar example with mutation data:
+
+``` r
+library(breakclone)
+table <- readVCFMutations("/path/to/data")
+pairs <- data.table::fread("/path/to/sample/sheet")
+reference <- makeReferenceMutations(table, pairs)
+results <- calculateRelatednessMutations(table, pairs, reference)
+plotScoresDensity(reference, results)
+```
