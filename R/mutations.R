@@ -88,30 +88,6 @@ calculateRelatednessMutations <- function(mutationTable, pairs, additionalMutati
   return(results)
 }
 
-# #' @export
-# makeReferenceMixingPairsMutations <- function(mutationTable, pairs, nperm = 10, additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y"){
-#
-#   mutationTable <- mutationTable[!excludeChromosomes, on = "Chr"]
-#   populationMutations <- collatePopulationMutations(mutationTable)
-#   if(!is.null(additionalMutations)){
-#     populationMutations <- c(populationMutations, additionalMutations)
-#   }
-#   reference <- numeric()
-#   for(i in 1:nperm){
-#     message("Constructing reference: Iteration #", i)
-#
-#     random_pairs <- as.data.table(cbind(sample(pairs[[1]]), sample(pairs[[2]])))
-#     random_pairs <- random_pairs[!apply(random_pairs, 1, function(y){any(apply(pairs, 1, function(x){all(x == y)}))})]
-# #    print(random_pairs)
-#     pair_scores <- apply(random_pairs, 1, function(x){getScoreMutations(mutationTable, as.character(x), populationMutations, nAdditionalSamples)})
-#     reference <- c(reference, pair_scores)
-#
-#
-#   }
-#   return(reference)
-# }
-
-
 #' Generate reference distribution from mutation data
 #'
 #' Generates the reference distribution of concordance scores from unpaired tumours for a given dataset.

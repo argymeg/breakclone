@@ -140,51 +140,6 @@ calculateRelatednessCn <- function(segmentTable, pairs, reference = NULL, cnType
   return(results)
 }
 
-# #' @export
-# makeReference <- function(segmentTable, nperm = 10, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y", maxgap = NULL){
-#
-#   cnType <- match.arg(cnType)
-#   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
-#   populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
-#   if(is.null(maxgap)){maxgap <- calculateMaxGap(segmentTable, cnType)}
-#
-#   reference <- numeric()
-#   for(i in 1:nperm){
-#     message("Constructing reference: Iteration #", i)
-#     randomise <- sample(unique(segmentTable$SampleID))
-#     random_pairs <- cbind.data.frame(randomise[1:(length(randomise)/2)], randomise[(length(randomise)/2 + 1):length(randomise)])
-#     apply(random_pairs, 1, function(x){if(x[1] == x[2]){stop("yes, it's possible: ", x[1])}})
-#     pair_scores <- apply(random_pairs, 1, function(x){getScoreCN(segmentTable, as.character(x), populationBreakpoints, cnType, maxgap)})
-#     reference <- c(reference, pair_scores)
-#
-#
-#   }
-#   return(reference)
-# }
-
-# #' @export
-# makeReferenceMixingPairs <- function(segmentTable, pairs, nperm = 10, cnType = c("alleleSpecific", "VCF"), excludeChromosomes = "Y", maxgap = NULL){
-#
-#   cnType <- match.arg(cnType)
-#   segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
-#   populationBreakpoints <- collatePopulationBreakpoints(segmentTable, cnType)
-#   if(is.null(maxgap)){maxgap <- calculateMaxGap(segmentTable, cnType)}
-#
-#   reference <- numeric()
-#   for(i in 1:nperm){
-#     message("Constructing reference: Iteration #", i)
-#
-#     random_pairs <- as.data.table(cbind(sample(pairs[[1]]), sample(pairs[[2]])))
-#     random_pairs <- random_pairs[!apply(random_pairs, 1, function(y){any(apply(pairs, 1, function(x){all(x == y)}))})]
-#
-#     pair_scores <- apply(random_pairs, 1, function(x){getScoreCN(segmentTable, as.character(x), populationBreakpoints, cnType, maxgap)})
-#     reference <- c(reference, pair_scores)
-#
-#
-#   }
-#   return(reference)
-# }
-
 #' Generate reference distribution from copy number data
 #'
 #' Generates the reference distribution of concordance scores from unpaired tumours for a given dataset.
