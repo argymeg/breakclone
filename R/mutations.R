@@ -126,10 +126,10 @@ calculateRelatednessMutations <- function(mutationTable, pairs, additionalMutati
 #' @return A numeric vector of pair scores comprising the reference distribution.
 
 #' @export
-makeReferenceMutations <- function(mutationTable, pairs, patients = NULL, delimiter = "_", additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y", scaleAFs = FALSE){
-
-
-  if(is.null(patients)){
+makeReferenceMutations <- function(mutationTable, pairs, patients = NULL, delimiter = NULL, additionalMutations = NULL, nAdditionalSamples = 0, excludeChromosomes = "Y", scaleAFs = FALSE){
+  if(is.null(patients) & is.null(delimiter)){
+    patients <- as.character(seq(1, nrow(pairs)))
+  } else if(is.null(patients)){
     p1 <- sapply(strsplit(pairs$Sample1, delimiter), "[", 1)
     p2 <- sapply(strsplit(pairs$Sample2, delimiter), "[", 1)
     if(all(p1 == p2)){
@@ -138,12 +138,12 @@ makeReferenceMutations <- function(mutationTable, pairs, patients = NULL, delimi
       stop("Autodetecting patient IDs failed!")
     }
   }
-  patients <- rbind(as.data.table(cbind(patients, pairs$Sample1)), as.data.table(cbind(patients, pairs$Sample2)))
+  patients <- rbind(as.data.table(cbind(patients, pairs[[1]])), as.data.table(cbind(patients, pairs[[2]])))
   colnames(patients) <- c("patient", "sample")
   patients <- unique(patients)
   setkey(patients, "sample")
 
-  refPairs <- expand.grid(list(Sample1 = unique(pairs$Sample1), Sample2 = unique(pairs$Sample2)), stringsAsFactors = FALSE)
+  refPairs <- expand.grid(list(Sample1 = unique(pairs[[1]]), Sample2 = unique(pairs[[2]])), stringsAsFactors = FALSE)
   refPairs <- refPairs[patients[refPairs$Sample1]$patient != patients[refPairs$Sample2]$patient,]
 
   message("Making reference based on ", nrow(refPairs), " possible pairs, this might take a while")
