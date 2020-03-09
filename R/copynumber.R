@@ -7,6 +7,16 @@ getScoreCN <- function(segmentTable, pair, populationBreakpoints, cnType, maxgap
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
 
+  if(nrow(sample1) == 0 | nrow(sample2) == 0){
+    if(nrow(sample1) == 0){
+      warning("Sample ", pair[1], " seems to have no aberrations, check your data if that isn't expected")
+    }
+    if(nrow(sample2) == 0){
+      warning("Sample ", pair[2], " seems to have no aberrations, check your data if that isn't expected")
+    }
+    return(0)
+  }
+
   if(cnType == "alleleSpecific"){
     sample1$nTotal <- sample1$nMajor + sample1$nMinor
     sample2$nTotal <- sample2$nMajor + sample2$nMinor

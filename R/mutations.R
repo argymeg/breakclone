@@ -2,6 +2,16 @@ getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditio
   sample1 <- mutationTable[mutationTable$SampleID == pair[1],]
   sample2 <- mutationTable[mutationTable$SampleID == pair[2],]
 
+  if(nrow(sample1) == 0 | nrow(sample2) == 0){
+    if(nrow(sample1) == 0){
+      warning("Sample ", pair[1], " seems to have no mutations, check your data if that isn't expected")
+    }
+    if(nrow(sample2) == 0){
+      warning("Sample ", pair[2], " seems to have no mutations, check your data if that isn't expected")
+    }
+    return(0)
+  }
+
   sample1_granges <- makeGRangesFromDataFrame(sample1, start.field = "Pos", end.field = "Pos", keep.extra.columns = TRUE)
   sample2_granges <- makeGRangesFromDataFrame(sample2, start.field = "Pos", end.field = "Pos", keep.extra.columns = TRUE)
   # sample1_granges$AF <- as.numeric(sample1_granges$AF)
