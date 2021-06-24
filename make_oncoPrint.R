@@ -2,7 +2,6 @@
 
 eventDataFrame <- read_csv("mutations.csv", col_names = TRUE)
 eventDataFrame <- eventDataFrame[eventDataFrame$Include==1,]
-eventDataFrame <- eventDataFrame[which(substr(eventDataFrame$sampleID,1,5)!="DCIS-"),] # remove synchronous pairs
 eventDataFrame <- eventDataFrame[eventDataFrame$Func.refGene %in% c("exonic","splicing"),]
 eventDataFrame <- eventDataFrame[!eventDataFrame$ExonicFunc.refGene %in% c("synonymous SNV"),]
 eventDataFrame <- eventDataFrame[MyNumeric(eventDataFrame$esp6500si_all)<0.01,]
