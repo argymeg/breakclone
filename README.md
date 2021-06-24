@@ -29,5 +29,6 @@ reference <- makeReferenceMutations(table, pairs)
 results <- calculateRelatednessMutations(table, pairs, reference)
 plotScoresDensity(reference, results)
 ```
+## Additional scripts
 
 R script make_oncoPrint.R takes as an input table of mutations and outputs statistical analysis of number of mutations for all genes in the panel and plots oncoPrint
