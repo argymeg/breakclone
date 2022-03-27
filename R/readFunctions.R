@@ -21,7 +21,6 @@ readAlleleSpecific <- function(directory, pattern = "*_Segments_AbsCN_alleleSpec
                                chr.field = "Chr", start.field = "Start", end.field = "End", nprobes.field = "nProbes",
                                nmajor.field = "nMajor", nminor.field = "nMinor", ntotal.field = NULL){
   fileList <- dir(directory, pattern, full.names = TRUE)
-  #segmentList <- lapply(fileList, data.table::fread[,c(sample.field, chr.field, start.field, end.field, nprobes.field, nmajor.field, nminor.field)])
   segmentList <- lapply(fileList, data.table::fread)
   if(is.null(sample.field)){segmentList <- mapply(cbind.data.frame, segmentList, basename(fileList), SIMPLIFY = FALSE)}
   segmentTable <- data.table::rbindlist(segmentList)
