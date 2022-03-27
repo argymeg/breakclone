@@ -40,13 +40,6 @@ getScoreCN <- function(segmentTable, pair, populationBreakpoints, cnType, maxgap
     sample2_lists <- sapply(presentStates, function(x){c(list(sample2[x, on = "SVType"]))})
   }
 
-  # sample1_lists <- c(list(), list(sample1["loss", on = "status"]), list(sample1["gain", on = "status"]))
-  # sample2_lists <- c(list(), list(sample2["loss", on = "status"]), list(sample2["gain", on = "status"]))
-  #
-
-  # sample1_granges <- lapply(sample1_lists, makeGRangesFromDataFrame)
-  # sample2_granges <- lapply(sample2_lists, makeGRangesFromDataFrame)
-
   #tryCatch creates an empty GRanges object if the list is empty - would error out otherwise
   sample1_granges <- lapply(sample1_lists, function(x){tryCatch({makeGRangesFromDataFrame(x)}, error = function(e){GRanges()})})
   sample2_granges <- lapply(sample2_lists, function(x){tryCatch({makeGRangesFromDataFrame(x)}, error = function(e){GRanges()})})
@@ -65,17 +58,8 @@ getScoreCN <- function(segmentTable, pair, populationBreakpoints, cnType, maxgap
     score_from_hits_end <- 0
     }
 
-  # nonhits_start_1 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 11449)))]}, sample1_granges, sample2_granges)
-  # nonhits_end_1 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 11449)))]}, sample1_granges, sample2_granges)
-  #
-  # nonhits_start_2 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "start", maxgap = 11449)))]}, sample2_granges, sample1_granges)
-  # nonhits_end_2 <- mapply(function(x,y){x[-queryHits(suppressWarnings(findOverlaps(x,y, type = "end", maxgap = 11449)))]}, sample2_granges, sample1_granges)
-
   nconcordant_adj <- score_from_hits_start + score_from_hits_end
-  #ndiscordant <- 2 * (nrow(sample1) + nrow(sample2)) - sum(unlist(lapply(c(hits_start, hits_end), length)))
-  # Old calculation
-  # ndiscordant <- nrow(sample1) + nrow(sample2) - 2 * nconcordant_adj
-  # Pretty sure the below calculation makes more sense - 2 breakpoints per row! Small difference but still.
+  
   ndiscordant <- 2 * (nrow(sample1) + nrow(sample2) - nconcordant_adj)
 
   score <- nconcordant_adj/(nconcordant_adj + 0.5 * ndiscordant)
