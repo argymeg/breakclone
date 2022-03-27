@@ -14,8 +14,7 @@ getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditio
 
   sample1_granges <- makeGRangesFromDataFrame(sample1, start.field = "Pos", end.field = "Pos", keep.extra.columns = TRUE)
   sample2_granges <- makeGRangesFromDataFrame(sample2, start.field = "Pos", end.field = "Pos", keep.extra.columns = TRUE)
-  # sample1_granges$AF <- as.numeric(sample1_granges$AF)
-  # sample2_granges$AF <- as.numeric(sample2_granges$AF)
+
   if(scaleAFs){
     sample1_granges$AF <- sample1_granges$AF / max(sample1_granges$AF)
     sample2_granges$AF <- sample2_granges$AF / max(sample2_granges$AF)
@@ -32,13 +31,6 @@ getScoreMutations <- function(mutationTable, pair, populationMutations, nAdditio
     nonhits_sample1 <- sample1_granges
     nonhits_sample2 <- sample2_granges
   }
-
-  # hits_sample1$AF <- as.numeric(hits_sample1$AF)
-  # hits_sample2$AF <- as.numeric(hits_sample2$AF)
-  # hits_sample1$AF <- hits_sample1$AF / max(sample1_granges$AF)
-  # hits_sample2$AF <- hits_sample2$AF / max(sample2_granges$AF)
-
-  # score <- sum(hits_sample1$AF, hits_sample2$AF) / (0.5 * sum(length(sample1_granges), length(sample2_granges)))
 
   nSamples <- length(unique(mutationTable$SampleID)) + nAdditionalSamples
 
