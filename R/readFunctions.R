@@ -64,8 +64,8 @@ getScoreCN <- function(segmentTable, pair, populationBreakpoints, cnType, maxgap
     }
     
     nconcordant_adj <- score_from_hits_start + score_from_hits_end
-    
-    ndiscordant <- 2 * (nrow(sample1) + nrow(sample2) - nconcordant_adj)
+
+    ndiscordant <- 2 * (nrow(segmentTable[segmentTable$SampleID == pair[1],]) + nrow(segmentTable[segmentTable$SampleID == pair[2],]) - nconcordant_adj)
     
     score <- nconcordant_adj/(nconcordant_adj + 0.5 * ndiscordant)
     return(score)
