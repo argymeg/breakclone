@@ -12,7 +12,7 @@ plotCNpairVCF(
   breaks,
   colors = c("#f1562f", "#8a4e97"),
   limits = c(-1.5, 2),
-  build = c("hg19", "hg38"),
+  build = c("hg38", "hg19"),
   excludeChromosomes = "Y",
   fontLabelSize = 7
 )

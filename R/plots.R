@@ -40,17 +40,20 @@ plotScoresHistogram <- function(reference, results){
   return(plot)
 }
 
-plotCN <- function(tmp, limits, color, binchrmdl, rlechr, binchrend, bincytoend, cnColumn = NULL, segColumn = NULL, title=NULL, fontLabelSize, yaxis = "Log2 Ratio"){
-  if(yaxis=='BAF'){
-    limits <- c(0, 1)
-  }
+plotCN <- function(tmp, limits, color, chrLims = NULL, bincytoend = NULL, cnColumn = NULL, segColumn = NULL, title=NULL, fontLabelSize, yaxis = "Log2 Ratio", build = c('hg38', 'hg19')){
+  build <- match.arg(build)
+  if(is.null(chrLims)) { chrLims <- getChrLims(template) }
+  if(is.null(bincytoend)) { bincytoend <- getCentromereLims(template, build, chrLims)}
+  
+  if(yaxis=='BAF'){ limits <- c(0, 1) }
   
   colnames(tmp)[colnames(tmp)==cnColumn] <- 'cnColumn'
   colnames(tmp)[colnames(tmp)==segColumn] <- 'segColumn'
+  
   p <- ggplot() +
     scale_y_continuous(name = yaxis, limits = c(limits[1],limits[2]), breaks = seq(limits[1], limits[2], 0.5), expand=c(0.01,0.01)) +
-    scale_x_continuous(name = "Chromosome", limits = c(0,tail(binchrend,1)), breaks = binchrmdl, labels = rlechr$values, expand = c(0,0)) +
-    geom_vline(xintercept = binchrend, color = "#666666", linetype = "solid",size=0.2) +
+    scale_x_continuous(name = "Chromosome", limits = c(0,tail(chrLims[[3]],1)), breaks = chrLims[[2]], labels = chrLims[[1]]$values, expand = c(0,0)) +
+    geom_vline(xintercept = chrLims[[3]], color = "#666666", linetype = "solid",size=0.2) +
     geom_vline(xintercept = bincytoend, color = "#666666", linetype = "dashed" ,size=0.2 ) +
     geom_point_rast(aes(x=bin, y=cnColumn), data = na.omit(tmp), color = color, shape = ".", raster.dpi=300) +
     geom_point_rast(aes(x=bin, y=segColumn), data = na.omit(tmp), color = "black", size=0.1, raster.dpi=300) +
@@ -107,6 +110,42 @@ HeatmapCNPairs <- function(callMat, brkMat, colors, colorsCN, fontLabelSize){
   return(ht)
 }
 
+getChrLims <- function(template){
+  rlechr <- rle(as.vector(template$chr))
+  binchrend <- c()
+  currentbin <- 0
+  binchrmdl <- c()
+  for (i in seq_along(rlechr$values)) {
+    currentmiddle <- currentbin+rlechr$lengths[i]/2
+    currentbin <- currentbin+rlechr$lengths[i]
+    binchrend <- append(binchrend, currentbin) 
+    binchrmdl <- append(binchrmdl, currentmiddle) 
+  }
+  
+  return(list(rlechr, binchrmdl, binchrend))
+}
+
+getCentromereLims <- function(template, build, chrLims = NULL){
+  if(is.null(chrLims)) { chrLims <- getChrLims(template)}
+  cytobands <- fread(paste0("http://hgdownload.cse.ucsc.edu/goldenpath/", build,"/database/cytoBand.txt.gz")) #download cytoband details from UCSC    cytobands[[1]] <- gsub("chr","",cytobands[[1]])
+  cytobands[[1]] <- gsub('chr', '', cytobands[[1]])
+  cytobands <- cytobands[cytobands[[1]] %in% as.character(unique(template$chr)),]
+  cytobands[[4]] <- gsub("[[:punct:]]", "", gsub('[0-9]+', "",as.character(cytobands[[4]])))
+  positions <- c()
+  for ( i in chrLims[[1]]$values ){
+    tmp <- cytobands[cytobands[[1]] == i,]
+    tmp.p <- tmp[tmp[[4]] == "p",]
+    p = max(tmp.p[,3])
+    positions <- c(positions, p)
+  }
+  bincytoend <- c()
+  for (i in 1:length(positions)){
+    bincytoend <- c(bincytoend, which(template$chr == i & template$start <= positions[i] & template$end >= positions[i])) 
+  }
+  
+  return(bincytoend)
+}
+
 #' Plot a VCF copy number pair with breakpoints. 
 #' 
 #' @param binnedTable A segmented copy number matrix with bins per row and samples per column.
@@ -139,33 +178,9 @@ plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks, colo
   template <- template[!excludeChromosomes, on = "chr"]
     
   #define chromosome and centromere limits
-  rlechr <- rle(as.vector(template$chr))
-  binchrend <- c()
-  currentbin <- 0
-  binchrmdl <- c()
-  for (i in seq_along(rlechr$values)) {
-    currentmiddle <- currentbin+rlechr$lengths[i]/2
-    currentbin <- currentbin+rlechr$lengths[i]
-    binchrend <- append(binchrend, currentbin) 
-    binchrmdl <- append(binchrmdl, currentmiddle) 
-  }
-  
-  cytobands <- fread(paste0("http://hgdownload.cse.ucsc.edu/goldenpath/", build,"/database/cytoBand.txt.gz")) #download cytoband details from UCSC    cytobands[[1]] <- gsub("chr","",cytobands[[1]])
-  cytobands[[1]] <- gsub('chr', '', cytobands[[1]])
-  cytobands <- cytobands[cytobands[[1]] %in% as.character(unique(template$chr)),]
-  cytobands[[4]] <- gsub("[[:punct:]]", "", gsub('[0-9]+', "",as.character(cytobands[[4]])))
-  positions <- c()
-  for ( i in rlechr$values ){
-    tmp <- cytobands[cytobands[[1]] == i,]
-    tmp.p <- tmp[tmp[[4]] == "p",]
-    p = max(tmp.p[,3])
-    positions <- c(positions, p)
-  }
-  bincytoend <- c()
-  for (i in 1:length(positions)){
-    bincytoend <- c(bincytoend, which(template$chr == i & template$start <= positions[i] & template$end >= positions[i])) 
-  }
-    
+  chrLims <- getChrLims(template)
+  bincytoend <- getCentromereLims(template, build, chrLims)
+ 
   # build callMat
   templateGR <- makeGRangesFromDataFrame(template, keep.extra.columns = T)
   callTableGR <- makeGRangesFromDataFrame(segmentTable[segmentTable$SampleID==pair[1],], keep.extra.columns = T)
@@ -204,8 +219,8 @@ plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks, colo
   brkMat[as.vector(outer(which(names(brkMat)%in%overlaps), 0:20, "+"))] <- 'Shared breakpoint'
   
   #segmented plot 
-  p1 <- plotCN(tmp=template, limits, color=colors[1], binchrmdl, rlechr, binchrend, bincytoend, cnColumn = 'copynumber_sample1', segColumn = 'segs_sample1', title = pair[1], fontLabelSize)
-  p2 <- plotCN(tmp=template, limits, color=colors[2], binchrmdl, rlechr, binchrend, bincytoend, cnColumn = 'copynumber_sample2', segColumn = 'segs_sample2', title = pair[2], fontLabelSize)
+  p1 <- plotCN(tmp=template, limits, color=colors[1], chrLims, bincytoend, cnColumn = 'copynumber_sample1', segColumn = 'segs_sample1', title = pair[1], fontLabelSize, build = build)
+  p2 <- plotCN(tmp=template, limits, color=colors[2], chrLims, bincytoend, cnColumn = 'copynumber_sample2', segColumn = 'segs_sample2', title = pair[2], fontLabelSize, build = build)
   
   #oncoplot
   p3 <- grid.grabExpr(draw(HeatmapCNPairs(callMat, brkMat, colors, colorsCN, fontLabelSize)))
@@ -230,10 +245,9 @@ plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks, colo
 #' @param BAF TRUE to plot BAF. Currently, code has glitches and need to be polished. 
 #' @return Copy number plot.
 #' @export
-plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg19', 'hg38'), excludeChromosomes = 'Y', fontLabelSize = 7, BAF=FALSE){
-  if (length(build) != 1){
-    stop("Build needs to be specificied. Try with hg19 or hg38.")
-  }
+plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, BAF=FALSE){
+  build <- match.arg(build)
+  message('Using genome build ', build)
   
   arraynr_s1 <- which(ASCATobj$samples==pair[1])
   arraynr_s2 <-  which(ASCATobj$samples==pair[2])
@@ -258,32 +272,8 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks, color
   template <- template[order(chr, pos),]
   
   #define chromosome and centromere limits
-  rlechr <- rle(as.vector(template$chr))
-  binchrend <- c()
-  currentbin <- 0
-  binchrmdl <- c()
-  for (i in seq_along(rlechr$values)) {
-    currentmiddle <- currentbin+rlechr$lengths[i]/2
-    currentbin <- currentbin+rlechr$lengths[i]
-    binchrend <- append(binchrend, currentbin) 
-    binchrmdl <- append(binchrmdl, currentmiddle) 
-  }
-  
-  cytobands <- fread(paste0("http://hgdownload.cse.ucsc.edu/goldenpath/", build,"/database/cytoBand.txt.gz")) #download cytoband details from UCSC    cytobands[[1]] <- gsub("chr","",cytobands[[1]])
-  cytobands[[1]] <- gsub('chr', '', cytobands[[1]])
-  cytobands <- cytobands[cytobands[[1]] %in% as.character(unique(template$chr)),]
-  cytobands[[4]] <- gsub("[[:punct:]]", "", gsub('[0-9]+', "",as.character(cytobands[[4]])))
-  positions <- c()
-  for ( i in rlechr$values ){
-    tmp <- cytobands[cytobands[[1]] == i,]
-    tmp.p <- tmp[tmp[[4]] == "p",]
-    p = max(tmp.p[,3])
-    positions <- c(positions, p)
-  }
-  bincytoend <- c()
-  for (i in 1:length(positions)){
-    bincytoend <- c(bincytoend, which(template$chr == i & template$start <= positions[i] & template$end >= positions[i])) 
-  }
+  chrLims <- getChrLims(template)
+  bincytoend <- getCentromereLims(template, build, chrLims)
   
   # build callMat
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
@@ -344,11 +334,11 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks, color
   brkMat <- brkMat[1:ncol(callMat)]
   
   # segmented plot
-  p1 <- plotCN(template, color = colors[1], limits = limits, binchrmdl, rlechr, binchrend, bincytoend, cnColumn = 'copynumber_sample1', segColumn = 'segs_sample1', title = paste0(pair[1], ', Ploidy ', round(sample1_ploidy, 1)), fontLabelSize)
-  p2 <- plotCN(template, color = colors[1], limits = limits, binchrmdl, rlechr, binchrend, bincytoend, cnColumn = 'baf_sample1', segColumn = 'baf_segs_sample1', title = '', fontLabelSize, yaxis = 'BAF')
+  p1 <- plotCN(template, color = colors[1], limits = limits, chrLims, bincytoend, cnColumn = 'copynumber_sample1', segColumn = 'segs_sample1', title = paste0(pair[1], ', Ploidy ', round(sample1_ploidy, 1)), fontLabelSize)
+  p2 <- plotCN(template, color = colors[1], limits = limits, chrLims, bincytoend, cnColumn = 'baf_sample1', segColumn = 'baf_segs_sample1', title = '', fontLabelSize, yaxis = 'BAF')
   
-  p3 <- plotCN(template, color = colors[2], limits = limits, binchrmdl, rlechr, binchrend, bincytoend, cnColumn = 'copynumber_sample2', segColumn = 'segs_sample2', title = paste0(pair[2], ', Ploidy ', round(sample2_ploidy, 1)), fontLabelSize)
-  p4 <- plotCN(template, color = colors[2], limits = limits, binchrmdl, rlechr, binchrend, bincytoend, cnColumn = 'baf_sample2', segColumn = 'baf_segs_sample2', title = '', fontLabelSize, yaxis = 'BAF')
+  p3 <- plotCN(template, color = colors[2], limits = limits, chrLims, bincytoend, cnColumn = 'copynumber_sample2', segColumn = 'segs_sample2', title = paste0(pair[2], ', Ploidy ', round(sample2_ploidy, 1)), fontLabelSize)
+  p4 <- plotCN(template, color = colors[2], limits = limits, chrLims, bincytoend, cnColumn = 'baf_sample2', segColumn = 'baf_segs_sample2', title = '', fontLabelSize, yaxis = 'BAF')
   
   # oncoplot
   p5 <- grid.grabExpr(draw(HeatmapCNPairs(callMat, brkMat, colors, colorsCN, fontLabelSize)))
