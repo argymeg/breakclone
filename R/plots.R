@@ -45,8 +45,6 @@ plotCN <- function(tmp, limits, color, chrLims = NULL, bincytoend = NULL, cnColu
   if(is.null(chrLims)) { chrLims <- getChrLims(template) }
   if(is.null(bincytoend)) { bincytoend <- getCentromereLims(template, build, chrLims)}
   
-  if(yaxis=='BAF'){ limits <- c(0, 1) }
-  
   colnames(tmp)[colnames(tmp)==cnColumn] <- 'cnColumn'
   colnames(tmp)[colnames(tmp)==segColumn] <- 'segColumn'
   
@@ -262,12 +260,11 @@ plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks = NUL
 #' @param build The genome build of your copy number data. hg19 and hg38 work, other builds haven't been tested.
 #' @param excludeChromosomes The name(s) of any chromosomes to be excluded.
 #' @param fontLabelSize Number indicating size of the labels.
-#' @param BAF TRUE to plot BAF. Currently, code has glitches and need to be polished. 
 #' @param maxgap The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.
 #' @param sharedBarSize Width of the shared breakpoints bars.
 #' @return Copy number plot.
 #' @export
-plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, BAF=FALSE, maxgap = NULL, sharedBarSize=30){
+plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, maxgap = NULL, sharedBarSize=30){
   build <- match.arg(build)
   message('Using genome build ', build)
   
@@ -281,15 +278,9 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL
                          segs_sample1 = ASCATobj$Tumor_LogR_segmented[,arraynr_s1], 
                          copynumber_sample2 = ASCATobj$Tumor_LogR[,arraynr_s2], 
                          segs_sample2 =  ASCATobj$Tumor_LogR_segmented[,arraynr_s2],
-                         baf_sample1 = ASCATobj$Tumor_BAF[,arraynr_s1], 
-                         baf_segs_sample1 = NA, 
-                         baf_sample2 = ASCATobj$Tumor_BAF[,arraynr_s2], 
-                         baf_segs_sample2 = NA,
                          snp = rownames(ASCATobj$Tumor_BAF),
                          bin = 1:nrow(ASCATobj$SNPpos))
   rownames(template) <- template$snp
-  template$baf_segs_sample1[which(rownames(template)%in%rownames(ASCATobj$Tumor_BAF_segmented[[arraynr_s1]]))] <- as.numeric(ASCATobj$Tumor_BAF_segmented[[arraynr_s1]][,1])
-  template$baf_segs_sample2[which(rownames(template)%in%rownames(ASCATobj$Tumor_BAF_segmented[[arraynr_s2]]))] <- as.numeric(ASCATobj$Tumor_BAF_segmented[[arraynr_s2]][,1])
   template <- template[!excludeChromosomes, on = "chr"]
   template <- template[order(chr, start),]
   
@@ -333,20 +324,13 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL
 
   # segmented plot
   p1 <- plotCN(template, color = colors[1], limits = limits, chrLims, bincytoend, cnColumn = 'copynumber_sample1', segColumn = 'segs_sample1', title = paste0(pair[1], ', Ploidy ', round(sample1_ploidy, 1)), fontLabelSize)
-  p2 <- plotCN(template, color = colors[1], limits = limits, chrLims, bincytoend, cnColumn = 'baf_sample1', segColumn = 'baf_segs_sample1', title = '', fontLabelSize, yaxis = 'BAF')
-  
   p3 <- plotCN(template, color = colors[2], limits = limits, chrLims, bincytoend, cnColumn = 'copynumber_sample2', segColumn = 'segs_sample2', title = paste0(pair[2], ', Ploidy ', round(sample2_ploidy, 1)), fontLabelSize)
-  p4 <- plotCN(template, color = colors[2], limits = limits, chrLims, bincytoend, cnColumn = 'baf_sample2', segColumn = 'baf_segs_sample2', title = '', fontLabelSize, yaxis = 'BAF')
   
   # oncoplot
   p5 <- grid.grabExpr(draw(HeatmapCNPairs(callMat, brkMat, colors, colorsCN, fontLabelSize)))
   
   # grid
-  if(isFALSE(BAF)){
-    grid <- ggarrange(p1, p3, p5, ncol = 1, nrow = 3)
-  } else {
-    grid <- ggarrange(p1, p2, p3, p4, p5, ncol = 1, nrow = 5)
-  }
+  grid <- ggarrange(p1, p3, p5, ncol = 1, nrow = 3)
   
   return(grid)
 }

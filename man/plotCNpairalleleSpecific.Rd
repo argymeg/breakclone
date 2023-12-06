@@ -14,7 +14,6 @@ plotCNpairalleleSpecific(
   build = c("hg38", "hg19"),
   excludeChromosomes = "Y",
   fontLabelSize = 7,
-  BAF = FALSE,
   maxgap = NULL,
   sharedBarSize = 30
 )
@@ -37,8 +36,6 @@ plotCNpairalleleSpecific(
 \item{excludeChromosomes}{The name(s) of any chromosomes to be excluded.}
 
 \item{fontLabelSize}{Number indicating size of the labels.}
-
-\item{BAF}{TRUE to plot BAF. Currently, code has glitches and need to be polished.}
 
 \item{maxgap}{The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.}
 
