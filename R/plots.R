@@ -289,23 +289,11 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL
   bincytoend <- getCentromereLims(template, build, chrLims)
   
   # call cnas
-  sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
-  sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
-  
-  sample1$nTotal <- sample1$nMajor + sample1$nMinor
-  sample2$nTotal <- sample2$nMajor + sample2$nMinor
+  sample1 <- callalleleSpecificCN(segmentTable[segmentTable$SampleID == pair[1],])
+  sample2 <- callalleleSpecificCN(segmentTable[segmentTable$SampleID == pair[2],])
   
   sample1_ploidy <- calculatePloidy(sample1)
   sample2_ploidy <- calculatePloidy(sample2)
-  
-  sample1 <- handlePloidy(sample1)
-  sample2 <- handlePloidy(sample2)
-  
-  sample1$SVType <- ifelse(sample1$nTotal < 2, "loss", ifelse(sample1$nTotal == 2 & sample1$nMinor == 1, "norm", ifelse(sample1$nTotal == 2 & sample1$nMinor == 0, "cnloh", ifelse(sample1$nTotal > 4, "amp", "gain"))))
-  sample2$SVType <- ifelse(sample2$nTotal < 2, "loss", ifelse(sample2$nTotal == 2 & sample2$nMinor == 1, "norm", ifelse(sample2$nTotal == 2 & sample2$nMinor == 0, "cnloh", ifelse(sample2$nTotal > 4, "amp", "gain"))))
-  
-  sample1 <- sample1[!"norm", on = "SVType"]
-  sample2 <- sample2[!"norm", on = "SVType"]
   
   segmentTable <- rbind(sample1, sample2)
   

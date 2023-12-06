@@ -2,24 +2,23 @@
 #' @import GenomicRanges
 #' @import S4Vectors
 
+callalleleSpecificCN <- function(sample) {
+  sample$nTotal <- sample$nMajor + sample$nMinor
+  sample <- handlePloidy(sample)
+  sample$SVType <- ifelse(sample$nTotal < 2, "loss", ifelse(sample$nTotal == 2 & sample$nMinor == 1, "norm", ifelse(sample$nTotal == 2 & sample$nMinor == 0, "cnloh", ifelse(sample$nTotal > 4, "amp", "gain"))))
+  sample <- sample[!"norm", on = "SVType"]
+  return(sample)
+}
+
 getHitCN <- function(sample1, sample2, pair, position=NULL, cnType = c("alleleSpecific", "VCF"), maxgap){
   cnType <- match.arg(cnType)
   
   if(cnType == "alleleSpecific"){
-    sample1$nTotal <- sample1$nMajor + sample1$nMinor
-    sample2$nTotal <- sample2$nMajor + sample2$nMinor
+    sample1 <- callalleleSpecificCN(sample1)
+    sample2 <- callalleleSpecificCN(sample2)
     
-    sample1 <- handlePloidy(sample1)
-    sample2 <- handlePloidy(sample2)
-    
-    sample1$status <- ifelse(sample1$nTotal < 2, "loss", ifelse(sample1$nTotal == 2 & sample1$nMinor == 1, "norm", ifelse(sample1$nTotal == 2 & sample1$nMinor == 0, "cnloh", ifelse(sample1$nTotal > 4, "amp", "gain"))))
-    sample2$status <- ifelse(sample2$nTotal < 2, "loss", ifelse(sample2$nTotal == 2 & sample2$nMinor == 1, "norm", ifelse(sample2$nTotal == 2 & sample2$nMinor == 0, "cnloh", ifelse(sample2$nTotal > 4, "amp", "gain"))))
-    
-    sample1 <- sample1[!"norm", on = "status"]
-    sample2 <- sample2[!"norm", on = "status"]
-    
-    sample1_lists <- c(list(sample1["loss", on = "status"]), list(sample1["cnloh", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["amp", on = "status"]), list(sample1["gain", on = "status"]), list(sample1["loss", on = "status"]))
-    sample2_lists <- c(list(sample2["loss", on = "status"]), list(sample2["cnloh", on = "status"]), list(sample2["gain", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["amp", on = "status"]), list(sample2["cnloh", on = "status"]))
+    sample1_lists <- c(list(sample1["loss", on = "SVType"]), list(sample1["cnloh", on = "SVType"]), list(sample1["gain", on = "SVType"]), list(sample1["amp", on = "SVType"]), list(sample1["gain", on = "SVType"]), list(sample1["loss", on = "SVType"]))
+    sample2_lists <- c(list(sample2["loss", on = "SVType"]), list(sample2["cnloh", on = "SVType"]), list(sample2["gain", on = "SVType"]), list(sample2["amp", on = "SVType"]), list(sample2["amp", on = "SVType"]), list(sample2["cnloh", on = "SVType"]))
     
   } else if(cnType == "VCF"){
     presentStates <- unique(c(sample1$SVType, sample2$SVType))
