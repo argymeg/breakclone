@@ -15,7 +15,8 @@ plotCNpairalleleSpecific(
   excludeChromosomes = "Y",
   fontLabelSize = 7,
   BAF = FALSE,
-  maxgap = NULL
+  maxgap = NULL,
+  sharedBarSize = 30
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ plotCNpairalleleSpecific(
 \item{BAF}{TRUE to plot BAF. Currently, code has glitches and need to be polished.}
 
 \item{maxgap}{The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.}
+
+\item{sharedBarSize}{Width of the shared breakpoints bars.}
 }
 \value{
 Copy number plot.

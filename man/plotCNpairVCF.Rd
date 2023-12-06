@@ -15,7 +15,8 @@ plotCNpairVCF(
   build = c("hg38", "hg19"),
   excludeChromosomes = "Y",
   fontLabelSize = 7,
-  maxgap = NULL
+  maxgap = NULL,
+  sharedBarSize = 30
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ plotCNpairVCF(
 \item{fontLabelSize}{Number indicating size of the labels.}
 
 \item{maxgap}{The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.}
+
+\item{sharedBarSize}{Width of the shared breakpoints bars.}
 }
 \value{
 Copy number plot.

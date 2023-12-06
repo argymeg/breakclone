@@ -167,7 +167,7 @@ buildtmpGR <- function(template, segmentTable, pair){
   return(templateGR)
 }
 
-buildbrkMat <- function(breaks, pair, segmentTable, callMat, templateGR, cnType = c('alleleSpecific', 'VCF'), maxgap, excludeChromosomes){
+buildbrkMat <- function(breaks, pair, segmentTable, callMat, templateGR, cnType = c('alleleSpecific', 'VCF'), maxgap, excludeChromosomes, sharedBarSize=30){
   if(is.null(breaks)) {
     brk <- exportSharedBreaks(pair, segmentTable, cnType = cnType, save=FALSE, maxgap = maxgap)
   } else {
@@ -183,7 +183,7 @@ buildbrkMat <- function(breaks, pair, segmentTable, callMat, templateGR, cnType 
   
   brkMat <- rep(NA, ncol(callMat))
   names(brkMat) <- colnames(callMat)
-  brkMat[as.vector(outer(which(names(brkMat)%in%overlaps), 0:200, "+"))] <- 'Shared breakpoint'
+  brkMat[as.vector(outer(which(names(brkMat)%in%overlaps), 0:sharedBarSize, "+"))] <- 'Shared breakpoint'
   brkMat <- brkMat[1:ncol(callMat)]
   return(brkMat)
 }
@@ -201,9 +201,10 @@ buildbrkMat <- function(breaks, pair, segmentTable, callMat, templateGR, cnType 
 #' @param excludeChromosomes The name(s) of any chromosomes to be excluded.
 #' @param fontLabelSize Number indicating size of the labels.
 #' @param maxgap The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.
+#' @param sharedBarSize Width of the shared breakpoints bars.
 #' @return Copy number plot. 
 #' @export
-plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks = NULL, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, maxgap = NULL){
+plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks = NULL, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, maxgap = NULL, sharedBarSize = 30){
   build <- match.arg(build)
   message('Using genome build ', build)
   
@@ -235,7 +236,7 @@ plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks = NUL
   colorsCN <- structure(c("#b2182b", "#2166ac"), names = c('DUP', 'DEL'))
   
   # build brkMat
-  brkMat <- buildbrkMat(breaks, pair, segmentTable, callMat, templateGR, cnType, maxgap, excludeChromosomes)
+  brkMat <- buildbrkMat(breaks, pair, segmentTable, callMat, templateGR, cnType, maxgap, excludeChromosomes, sharedBarSize)
 
   #segmented plot 
   p1 <- plotCN(tmp=template, limits, color=colors[1], chrLims, bincytoend, cnColumn = 'copynumber_sample1', segColumn = 'segs_sample1', title = pair[1], fontLabelSize, build = build)
@@ -263,9 +264,10 @@ plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks = NUL
 #' @param fontLabelSize Number indicating size of the labels.
 #' @param BAF TRUE to plot BAF. Currently, code has glitches and need to be polished. 
 #' @param maxgap The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.
+#' @param sharedBarSize Width of the shared breakpoints bars.
 #' @return Copy number plot.
 #' @export
-plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, BAF=FALSE, maxgap = NULL){
+plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, BAF=FALSE, maxgap = NULL, sharedBarSize=30){
   build <- match.arg(build)
   message('Using genome build ', build)
   
@@ -327,7 +329,7 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL
   colorsCN <- structure(c("#b2182b", '#f4a582', "#2166ac", '#92c5de'), names = c('amp', 'gain', 'loss', 'cnloh'))
   
   # build brkMat
-  brkMat <- buildbrkMat(breaks, pair, segmentTable, callMat, templateGR, cnType, maxgap, excludeChromosomes)
+  brkMat <- buildbrkMat(breaks, pair, segmentTable, callMat, templateGR, cnType, maxgap, excludeChromosomes, sharedBarSize)
 
   # segmented plot
   p1 <- plotCN(template, color = colors[1], limits = limits, chrLims, bincytoend, cnColumn = 'copynumber_sample1', segColumn = 'segs_sample1', title = paste0(pair[1], ', Ploidy ', round(sample1_ploidy, 1)), fontLabelSize)
