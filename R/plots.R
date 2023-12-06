@@ -121,12 +121,12 @@ HeatmapCNPairs <- function(callMat, brkMat, colors, colorsCN, fontLabelSize){
 #' @param fontLabelSize Number indicating size of the labels.
 #' @return Copy number plot. 
 #' @export
-plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg19', 'hg38'), excludeChromosomes = 'Y', fontLabelSize = 7){
-  segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
-  if (length(build) != 1){
-    stop("Build needs to be specificied. Try with hg19 or hg38.")
-  }
+plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7){
+  build <- match.arg(build)
+  message('Using genome build ', build)
   
+  segmentTable <- segmentTable[!excludeChromosomes, on = "Chr"]
+
   template <- data.table(region = rownames(binnedTable), 
                          chr = gsub("\\:.*", "", rownames(binnedTable)),
                          start = as.integer(gsub("\\-.*","",gsub(".*:","", rownames(binnedTable)))), 
