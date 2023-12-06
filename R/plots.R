@@ -146,6 +146,48 @@ getCentromereLims <- function(template, build, chrLims = NULL){
   return(bincytoend)
 }
 
+buildtmpGR <- function(template, segmentTable, pair){
+  templateGR <- makeGRangesFromDataFrame(template, keep.extra.columns = T)
+  callTableGR <- makeGRangesFromDataFrame(segmentTable[segmentTable$SampleID==pair[1],], keep.extra.columns = T)
+  
+  overlaps <- findOverlaps(templateGR, callTableGR)
+  copy_numbers <- callTableGR$SVType[subjectHits(overlaps)]
+  
+  templateGR$call_sample1 <- NA
+  templateGR[queryHits(overlaps)]$call_sample1 <- copy_numbers
+  
+  callTableGR <- makeGRangesFromDataFrame(segmentTable[segmentTable$SampleID==pair[2],], keep.extra.columns = T)
+  
+  overlaps <- findOverlaps(templateGR, callTableGR)
+  copy_numbers <- callTableGR$SVType[subjectHits(overlaps)]
+  
+  templateGR$call_sample2 <- NA
+  templateGR[queryHits(overlaps)]$call_sample2 <- copy_numbers
+  
+  return(templateGR)
+}
+
+buildbrkMat <- function(breaks, pair, segmentTable, callMat, templateGR, cnType = c('alleleSpecific', 'VCF'), maxgap, excludeChromosomes){
+  if(is.null(breaks)) {
+    brk <- exportSharedBreaks(pair, segmentTable, cnType = cnType, save=FALSE, maxgap = maxgap)
+  } else {
+    brk <- as.data.table(breaks[[paste0(pair[1], '-', pair[2])]])
+  }
+  
+  brk <- brk[!excludeChromosomes, on = "seqnames"]
+  
+  brk$start <- ifelse(brk$break_shared=='end', brk$end, brk$start)
+  brk$end <- ifelse(brk$break_shared=='start', brk$start, brk$end)
+  brkGR <- makeGRangesFromDataFrame(brk, keep.extra.columns = T)
+  overlaps <- as.data.table(subsetByOverlaps(templateGR, brkGR))[['region']]
+  
+  brkMat <- rep(NA, ncol(callMat))
+  names(brkMat) <- colnames(callMat)
+  brkMat[as.vector(outer(which(names(brkMat)%in%overlaps), 0:200, "+"))] <- 'Shared breakpoint'
+  brkMat <- brkMat[1:ncol(callMat)]
+  return(brkMat)
+}
+
 #' Plot a VCF copy number pair with breakpoints. 
 #' 
 #' @param binnedTable A segmented copy number matrix with bins per row and samples per column.
@@ -158,9 +200,10 @@ getCentromereLims <- function(template, build, chrLims = NULL){
 #' @param build The genome build of your copy number data. hg19 and hg38 work, other builds haven't been tested.
 #' @param excludeChromosomes The name(s) of any chromosomes to be excluded.
 #' @param fontLabelSize Number indicating size of the labels.
+#' @param maxgap The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.
 #' @return Copy number plot. 
 #' @export
-plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7){
+plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks = NULL, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, maxgap = NULL){
   build <- match.arg(build)
   message('Using genome build ', build)
   
@@ -182,22 +225,7 @@ plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks, colo
   bincytoend <- getCentromereLims(template, build, chrLims)
  
   # build callMat
-  templateGR <- makeGRangesFromDataFrame(template, keep.extra.columns = T)
-  callTableGR <- makeGRangesFromDataFrame(segmentTable[segmentTable$SampleID==pair[1],], keep.extra.columns = T)
-    
-  overlaps <- findOverlaps(templateGR, callTableGR)
-  copy_numbers <- callTableGR$SVType[subjectHits(overlaps)]
-    
-  templateGR$call_sample1 <- NA
-  templateGR[queryHits(overlaps)]$call_sample1 <- copy_numbers
-    
-  callTableGR <- makeGRangesFromDataFrame(segmentTable[segmentTable$SampleID==pair[2],], keep.extra.columns = T)
-    
-  overlaps <- findOverlaps(templateGR, callTableGR)
-  copy_numbers <- callTableGR$SVType[subjectHits(overlaps)]
-    
-  templateGR$call_sample2 <- NA
-  templateGR[queryHits(overlaps)]$call_sample2 <- copy_numbers
+  templateGR <- buildtmpGR(template, segmentTable, pair)
     
   callMat <- t(as.matrix(data.frame(sample1=as.data.table(templateGR)[['call_sample1']], sample2=as.data.table(templateGR)[['call_sample2']])))
   rownames(callMat) <- pair
@@ -207,17 +235,8 @@ plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks, colo
   colorsCN <- structure(c("#b2182b", "#2166ac"), names = c('DUP', 'DEL'))
   
   # build brkMat
-  brk <- as.data.table(breaks[[paste0(pair[1], '-', pair[2])]])
-  brk <- brk[!excludeChromosomes, on = "seqnames"]
-  brk$start <- ifelse(brk$break_shared=='end', brk$end, brk$start)
-  brk$end <- ifelse(brk$break_shared=='start', brk$start, brk$end)
-  brkGR <- makeGRangesFromDataFrame(brk, keep.extra.columns = T)
-  overlaps <- as.data.table(subsetByOverlaps(templateGR, brkGR))[['region']]
-  
-  brkMat <- rep(NA, ncol(callMat))
-  names(brkMat) <- colnames(callMat)
-  brkMat[as.vector(outer(which(names(brkMat)%in%overlaps), 0:20, "+"))] <- 'Shared breakpoint'
-  
+  brkMat <- buildbrkMat(breaks, pair, segmentTable, callMat, templateGR, cnType, maxgap, excludeChromosomes)
+
   #segmented plot 
   p1 <- plotCN(tmp=template, limits, color=colors[1], chrLims, bincytoend, cnColumn = 'copynumber_sample1', segColumn = 'segs_sample1', title = pair[1], fontLabelSize, build = build)
   p2 <- plotCN(tmp=template, limits, color=colors[2], chrLims, bincytoend, cnColumn = 'copynumber_sample2', segColumn = 'segs_sample2', title = pair[2], fontLabelSize, build = build)
@@ -243,9 +262,10 @@ plotCNpairVCF <- function(binnedTable, cnTable, pair, segmentTable, breaks, colo
 #' @param excludeChromosomes The name(s) of any chromosomes to be excluded.
 #' @param fontLabelSize Number indicating size of the labels.
 #' @param BAF TRUE to plot BAF. Currently, code has glitches and need to be polished. 
+#' @param maxgap The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.
 #' @return Copy number plot.
 #' @export
-plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, BAF=FALSE){
+plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL, colors = c("#f1562f", "#8a4e97"), limits = c(-1.5, 2), build = c('hg38', 'hg19'), excludeChromosomes = 'Y', fontLabelSize = 7, BAF=FALSE, maxgap = NULL){
   build <- match.arg(build)
   message('Using genome build ', build)
   
@@ -275,7 +295,7 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks, color
   chrLims <- getChrLims(template)
   bincytoend <- getCentromereLims(template, build, chrLims)
   
-  # build callMat
+  # call cnas
   sample1 <- segmentTable[segmentTable$SampleID == pair[1],]
   sample2 <- segmentTable[segmentTable$SampleID == pair[2],]
   
@@ -288,30 +308,16 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks, color
   sample1 <- handlePloidy(sample1)
   sample2 <- handlePloidy(sample2)
   
-  sample1$status <- ifelse(sample1$nTotal < 2, "loss", ifelse(sample1$nTotal == 2 & sample1$nMinor == 1, "norm", ifelse(sample1$nTotal == 2 & sample1$nMinor == 0, "cnloh", ifelse(sample1$nTotal > 4, "amp", "gain"))))
-  sample2$status <- ifelse(sample2$nTotal < 2, "loss", ifelse(sample2$nTotal == 2 & sample2$nMinor == 1, "norm", ifelse(sample2$nTotal == 2 & sample2$nMinor == 0, "cnloh", ifelse(sample2$nTotal > 4, "amp", "gain"))))
+  sample1$SVType <- ifelse(sample1$nTotal < 2, "loss", ifelse(sample1$nTotal == 2 & sample1$nMinor == 1, "norm", ifelse(sample1$nTotal == 2 & sample1$nMinor == 0, "cnloh", ifelse(sample1$nTotal > 4, "amp", "gain"))))
+  sample2$SVType <- ifelse(sample2$nTotal < 2, "loss", ifelse(sample2$nTotal == 2 & sample2$nMinor == 1, "norm", ifelse(sample2$nTotal == 2 & sample2$nMinor == 0, "cnloh", ifelse(sample2$nTotal > 4, "amp", "gain"))))
   
-  sample1 <- sample1[!"norm", on = "status"]
-  sample2 <- sample2[!"norm", on = "status"]
+  sample1 <- sample1[!"norm", on = "SVType"]
+  sample2 <- sample2[!"norm", on = "SVType"]
   
   segmentTable <- rbind(sample1, sample2)
   
-  templateGR <- makeGRangesFromDataFrame(template, keep.extra.columns = T)
-  callTableGR <- makeGRangesFromDataFrame(segmentTable[segmentTable$SampleID==pair[1],], keep.extra.columns = T)
-  
-  overlaps <- findOverlaps(templateGR, callTableGR)
-  copy_numbers <- callTableGR$status[subjectHits(overlaps)]
-  
-  templateGR$call_sample1 <- NA
-  templateGR[queryHits(overlaps)]$call_sample1 <- copy_numbers
-  
-  callTableGR <- makeGRangesFromDataFrame(segmentTable[segmentTable$SampleID==pair[2],], keep.extra.columns = T)
-  
-  overlaps <- findOverlaps(templateGR, callTableGR)
-  copy_numbers <- callTableGR$status[subjectHits(overlaps)]
-  
-  templateGR$call_sample2 <- NA
-  templateGR[queryHits(overlaps)]$call_sample2 <- copy_numbers
+  # build callMat
+  templateGR <- buildtmpGR(template, segmentTable, pair)
   
   callMat <- t(as.matrix(data.frame(sample1=as.data.table(templateGR)[['call_sample1']], sample2=as.data.table(templateGR)[['call_sample2']])))
   rownames(callMat) <- pair
@@ -321,18 +327,8 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks, color
   colorsCN <- structure(c("#b2182b", '#f4a582', "#2166ac", '#92c5de'), names = c('amp', 'gain', 'loss', 'cnloh'))
   
   # build brkMat
-  brk <- as.data.table(breaks[[paste0(pair[1], '-', pair[2])]])
-  brk <- brk[!excludeChromosomes, on = "seqnames"]
-  brk$start <- ifelse(brk$break_shared=='end', brk$end, brk$start)
-  brk$end <- ifelse(brk$break_shared=='start', brk$start, brk$end)
-  brkGR <- makeGRangesFromDataFrame(brk, keep.extra.columns = T)
-  overlaps <- as.data.table(subsetByOverlaps(templateGR, brkGR))[['region']]
-  
-  brkMat <- rep(NA, ncol(callMat))
-  names(brkMat) <- colnames(callMat)
-  brkMat[as.vector(outer(which(names(brkMat)%in%overlaps), 0:200, "+"))] <- 'Shared breakpoint'
-  brkMat <- brkMat[1:ncol(callMat)]
-  
+  brkMat <- buildbrkMat(breaks, pair, segmentTable, callMat, templateGR, cnType, maxgap, excludeChromosomes)
+
   # segmented plot
   p1 <- plotCN(template, color = colors[1], limits = limits, chrLims, bincytoend, cnColumn = 'copynumber_sample1', segColumn = 'segs_sample1', title = paste0(pair[1], ', Ploidy ', round(sample1_ploidy, 1)), fontLabelSize)
   p2 <- plotCN(template, color = colors[1], limits = limits, chrLims, bincytoend, cnColumn = 'baf_sample1', segColumn = 'baf_segs_sample1', title = '', fontLabelSize, yaxis = 'BAF')

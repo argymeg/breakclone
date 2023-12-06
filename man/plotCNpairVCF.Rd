@@ -9,12 +9,13 @@ plotCNpairVCF(
   cnTable,
   pair,
   segmentTable,
-  breaks,
+  breaks = NULL,
   colors = c("#f1562f", "#8a4e97"),
   limits = c(-1.5, 2),
   build = c("hg38", "hg19"),
   excludeChromosomes = "Y",
-  fontLabelSize = 7
+  fontLabelSize = 7,
+  maxgap = NULL
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ plotCNpairVCF(
 \item{excludeChromosomes}{The name(s) of any chromosomes to be excluded.}
 
 \item{fontLabelSize}{Number indicating size of the labels.}
+
+\item{maxgap}{The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.}
 }
 \value{
 Copy number plot.

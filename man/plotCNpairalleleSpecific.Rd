@@ -8,13 +8,14 @@ plotCNpairalleleSpecific(
   ASCATobj,
   segmentTable,
   pair,
-  breaks,
+  breaks = NULL,
   colors = c("#f1562f", "#8a4e97"),
   limits = c(-1.5, 2),
   build = c("hg38", "hg19"),
   excludeChromosomes = "Y",
   fontLabelSize = 7,
-  BAF = FALSE
+  BAF = FALSE,
+  maxgap = NULL
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ plotCNpairalleleSpecific(
 \item{fontLabelSize}{Number indicating size of the labels.}
 
 \item{BAF}{TRUE to plot BAF. Currently, code has glitches and need to be polished.}
+
+\item{maxgap}{The maximum gap between two breakpoints for them to be considered concordant. If unspecified, it is automatically set to 5 times the average interprobe distance of the assay.}
 }
 \value{
 Copy number plot.
