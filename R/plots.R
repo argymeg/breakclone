@@ -269,7 +269,7 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks, color
   template$baf_segs_sample1[which(rownames(template)%in%rownames(ASCATobj$Tumor_BAF_segmented[[arraynr_s1]]))] <- as.numeric(ASCATobj$Tumor_BAF_segmented[[arraynr_s1]][,1])
   template$baf_segs_sample2[which(rownames(template)%in%rownames(ASCATobj$Tumor_BAF_segmented[[arraynr_s2]]))] <- as.numeric(ASCATobj$Tumor_BAF_segmented[[arraynr_s2]][,1])
   template <- template[!excludeChromosomes, on = "chr"]
-  template <- template[order(chr, pos),]
+  template <- template[order(chr, start),]
   
   #define chromosome and centromere limits
   chrLims <- getChrLims(template)
