@@ -341,10 +341,10 @@ plotCNpairalleleSpecific <- function(ASCATobj, segmentTable, pair, breaks = NULL
 #' @export
 plotSummary <- function(summary, sortBy=c('verdict', 'fraction_shared'), colors = c("#3987bb", "#aee7ea", '#0c0d0c'), colorClonality = c("#f5c61a", "#fb4f14", "#660c21"), colorScore = '#b48c9c', colorN = 'grey50', patients = NULL, delimiter = NULL, extraAnno = NULL, colorsExtraAnno = NULL, sample1 = 'Primary', sample2 = 'Recurrence'){
   if(is.null(patients) & is.null(delimiter)){
-    patients <- as.character(seq(1, nrow(pairs)))
+    patients <- as.character(seq(1, nrow(summary)))
   } else if(is.null(patients)){
-    p1 <- sapply(strsplit(pairs$Sample1, delimiter), "[", 1)
-    p2 <- sapply(strsplit(pairs$Sample2, delimiter), "[", 1)
+    p1 <- sapply(strsplit(summary$Sample1, delimiter), "[", 1)
+    p2 <- sapply(strsplit(summary$Sample2, delimiter), "[", 1)
     if(all(p1 == p2)){
       patients <- p1
     } else {
