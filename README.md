@@ -1,4 +1,9 @@
-
+> [!NOTE]  
+> This repository contains the original `breakclone` package described in:
+> 
+> Lips, E.H., Kumar, T., Megalios, A. *et al*. Genomic analysis defines clonal relationships of ductal carcinoma in situ and recurrent invasive breast cancer. *Nat Genet* **54**, 850–860 (2022). https://doi.org/10.1038/s41588-022-01082-3
+> 
+> It is no longer updated or maintained. Ongoing development is hosted at: https://github.com/Sawyer-s-Group/breakclone.
 # breakclone
 
 <!-- badges: start -->
